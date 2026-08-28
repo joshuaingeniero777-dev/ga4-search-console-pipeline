@@ -1,4 +1,0 @@
--r requirements.txt
-
-pytest                     # test runner (Phase 9)
-ruff                       # linter and formatter
