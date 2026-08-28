@@ -1,14 +1,14 @@
 # Google API clients
-google-analytics-data      # GA4 Data API
-google-api-python-client   # Search Console API
-google-auth                # shared authentication layer
-gspread                    # friendlier wrapper for Google Sheets
+google-analytics-data==0.23.0      # GA4 Data API
+google-api-python-client==2.199.0  # Search Console API
+google-auth==2.57.0                # shared authentication layer
+gspread==6.2.1                     # friendlier wrapper for Google Sheets
 
 # Data handling
-pandas>=2.3.3              # first pandas release with Python 3.14 wheels
+pandas==3.0.5                      # note: 3.x, not 2.x — see docs/decisions.md
 
 # Alerting
-requests                   # posting to a Slack webhook
+requests==2.34.2                   # posting to a Slack webhook
 
 # Configuration
-python-dotenv              # loads secrets from a .env file in development
+python-dotenv==1.2.3               # loads secrets from a .env file in development
