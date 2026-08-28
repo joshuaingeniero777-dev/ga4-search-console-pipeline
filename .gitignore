@@ -1,0 +1,31 @@
+# Virtual environment
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Secrets — nothing matching these ever gets committed
+.env
+*.json
+!package.json
+credentials.json
+service-account*.json
+token.json
+config/settings.toml
+
+# Logs
+*.log
+logs/
+
+# Test and tooling caches
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
