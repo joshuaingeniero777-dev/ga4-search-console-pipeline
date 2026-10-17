@@ -16,6 +16,7 @@ made without stakeholder input and is open to correction.
 | 8 | Service account key has no expiry | Google JSON keys don't rotate automatically. Should be regenerated periodically; consider Workload Identity Federation if this moves to GCP hosting | Open |
 | 9 | Billing left disabled on the Cloud project | GA4 Data, Search Console, and Sheets APIs are free within quota. Avoids tying the project to a card or a 90-day trial | My call — revisit if Phase 10 lands on Cloud Scheduler |
 | 10 | APIs enabled: GA4 Data, Search Console, Sheets only | Least privilege. GA4 Admin API deliberately left off since we read reports, not configuration | My call |
+| 11 | Config via .env + python-dotenv | Keeps environment-specific values out of code. .env.example documents what settings exist without exposing real ones | My call |
 
 ## Open questions
 
