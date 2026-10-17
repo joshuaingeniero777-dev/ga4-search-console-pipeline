@@ -1,0 +1,8 @@
+---
+description: Project rules for the GA4 + Search Console pipeline
+alwaysApply: true
+---
+
+Before doing any work in this repository, read `CLAUDE.md` in the repo root and follow every rule in it for the whole task.
+
+`CLAUDE.md` is the single source of truth for this project's architecture, decisions already made, and agent rules. If anything here conflicts with it, `CLAUDE.md` wins.

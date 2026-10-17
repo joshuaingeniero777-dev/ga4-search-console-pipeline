@@ -1,5 +1,6 @@
 # Google API clients
 google-analytics-data==0.23.0      # GA4 Data API
+google-analytics-admin==0.30.2     # GA4 Admin API (finding the property ID)
 google-api-python-client==2.199.0  # Search Console API
 google-auth==2.57.0                # shared authentication layer
 gspread==6.2.1                     # friendlier wrapper for Google Sheets

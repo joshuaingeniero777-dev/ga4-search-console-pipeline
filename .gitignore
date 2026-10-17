@@ -1,6 +1,12 @@
 # Virtual environment
 .venv/
 
+# Node / frontend
+node_modules/
+
+# Claude Code personal settings
+.claude/settings.local.json
+
 # Python bytecode
 __pycache__/
 *.py[cod]
