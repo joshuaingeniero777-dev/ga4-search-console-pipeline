@@ -9,7 +9,7 @@ import logging
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 
-from pipeline import alerts, extract, load
+from pipeline import alerts, extract, load, mail
 from pipeline.errors import explain_error
 from pipeline.runner import StepResult
 from pipeline.settings import Settings
@@ -32,7 +32,7 @@ def pull_and_load(
     *,
     ga4: Fetch = extract.fetch_ga4,
     search_console: Fetch = extract.fetch_search_console,
-    sender_for: Callable[[], alerts.Sender | None] = alerts.no_sender,
+    sender_for: Callable[[], alerts.Sender | None] = mail.configured_sender,
     now: datetime | None = None,
 ) -> StepResult:
     now = now or datetime.now(UTC)

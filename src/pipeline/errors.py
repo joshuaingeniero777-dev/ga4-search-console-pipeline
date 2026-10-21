@@ -5,6 +5,7 @@ message from here, never a raw exception or stack trace.
 """
 
 from google.api_core import exceptions
+from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 
 
@@ -27,6 +28,12 @@ def explain_error(error: Exception, source: str) -> str:
         return str(error)
     text = str(error)
     code = status_code(error)
+    if isinstance(error, RefreshError) and source == "Gmail":
+        return (
+            "The alerts mailbox's permission to send email has run out (for example, its password was "
+            "changed or the permission was removed). Someone needs to run "
+            "scripts/authorize_alert_mailbox.py again."
+        )
     if isinstance(error, FileNotFoundError):
         return "service-account.json wasn't found. Run this from the project's main folder."
     if code == 403 and ("SERVICE_DISABLED" in text or "has not been used" in text):

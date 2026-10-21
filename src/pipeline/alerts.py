@@ -164,11 +164,6 @@ def email(drops: list[Drop]) -> tuple[str, str]:
     return subject, "\n".join(lines)
 
 
-def no_sender() -> Sender | None:
-    """How alert emails are sent isn't decided yet (docs/ROADMAP.md, item 6), so nothing is sent."""
-    return None
-
-
 def check(
     settings: Settings,
     store: Store,

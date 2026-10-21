@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from pipeline import alerts, load
+from pipeline import alerts, load, mail
 from pipeline.pull import pull_and_load
 from pipeline.settings import parse_settings
 from pipeline.store import ALERTS_TAB
@@ -144,7 +144,7 @@ def test_off_while_settings_are_placeholders(store, dropping):
 
 
 def test_off_while_no_sender_is_set_up(store, dropping):
-    outcome = alerts.check(settings(), store, NOW, alerts.no_sender)
+    outcome = alerts.check(settings(), store, NOW, lambda: None)
     assert outcome.message.startswith("Alerts are off because no sending mailbox is set up yet")
 
 
@@ -175,6 +175,8 @@ def test_run_continues_and_fails_clearly_if_the_email_cannot_be_sent(store, spre
     assert "GA4: 0 days updated." in result.message
 
 
-def test_real_run_step_sends_nothing_until_a_sender_is_chosen(store, dropping):
+def test_real_run_step_sends_nothing_until_the_mailbox_is_set_up(store, dropping, monkeypatch):
+    monkeypatch.setattr(mail, "load_dotenv", lambda: None)
+    monkeypatch.delenv(mail.REFRESH_TOKEN_ENV, raising=False)
     result = pull_and_load(NEWEST, NEWEST, settings(), store, ga4=lambda *_: {}, search_console=lambda *_: {}, now=NOW)
     assert result.ok and "no sending mailbox is set up yet" in result.message
