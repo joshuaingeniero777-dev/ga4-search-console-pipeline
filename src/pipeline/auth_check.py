@@ -5,23 +5,14 @@ access yet'. Those look similar from a failed API call but have completely
 different fixes, so it's worth being able to test them separately.
 """
 
-from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
-KEY_PATH = "service-account.json"
-
-# Scopes declare what this token is allowed to do. Both are read-only, so
-# even a leaked token could not modify anything in Analytics or Search Console.
-SCOPES = [
-    "https://www.googleapis.com/auth/analytics.readonly",
-    "https://www.googleapis.com/auth/webmasters.readonly",
-]
+from pipeline.google_auth import READONLY_SCOPES
+from pipeline.google_auth import credentials as load_credentials
 
 
 def main() -> None:
-    credentials = service_account.Credentials.from_service_account_file(
-        KEY_PATH, scopes=SCOPES
-    )
+    credentials = load_credentials(READONLY_SCOPES)
 
     print(f"Service account: {credentials.service_account_email}")
 

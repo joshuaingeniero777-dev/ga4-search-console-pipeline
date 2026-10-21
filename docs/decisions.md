@@ -23,6 +23,7 @@ made without stakeholder input and is open to correction.
 | 15 | Runs (scheduled and "Run now") execute as a Cloud Run Job, not FastAPI background tasks | A Job runs to completion on its own, so a long run isn't cut off when the API finishes responding | Yes — confirmed 2026-10-21. See open question on billing |
 | 16 | "Run now" re-pulls capped at 366 days per run | Keeps a single run inside API quotas and time limits | Yes — confirmed 2026-10-21 |
 | 17 | Metrics, alert thresholds, and alert recipients ship with placeholder defaults marked TBD | Waiting on Marisol. Code is built so the real values are a settings change, not a code change | Pending — owner to supply values |
+| 18 | API hosted on Cloud Run; control panel hosted on Vercel | Vercel is built for Next.js. The API stays in Google Cloud, next to the pipeline and the service account | Yes — confirmed 2026-10-21. Cloud Run is subject to the billing open question |
 
 ## Open questions
 
