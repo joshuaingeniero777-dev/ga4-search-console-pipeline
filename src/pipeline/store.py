@@ -113,6 +113,8 @@ class Store:
         self._spreadsheet = spreadsheet
         self._editor_email = editor_email
         self._lock_checked: set[str] = set()
+        # Tabs this Store found unlocked and locked again, and when. Shown on the status page.
+        self.relocked: dict[str, datetime] = {}
 
     @classmethod
     def open(cls) -> "Store":
@@ -143,6 +145,7 @@ class Store:
             if not self._is_locked(worksheet):
                 log.warning("Tab %s wasn't locked; locking it again.", title)
                 self._protect(worksheet)
+                self.relocked[title] = _now()
             self._lock_checked.add(title)
         return worksheet
 
@@ -194,6 +197,12 @@ class Store:
     @staticmethod
     def _newest(rows: list[list[str]]) -> list[str] | None:
         return max(rows, key=lambda row: row[2]) if rows else None
+
+    def settings_meta(self) -> tuple[str | None, str | None]:
+        """(version, updated_by) of the last save, even if the saved settings are invalid."""
+        _, rows = self._settings_rows()
+        newest = self._newest(rows)
+        return (newest[2], newest[3]) if newest else (None, None)
 
     def read_settings(self) -> SettingsRecord:
         """Current settings. Seeds the TBD defaults the first time; raises SettingsInvalid if hand-edited badly."""

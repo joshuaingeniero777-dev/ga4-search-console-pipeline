@@ -25,8 +25,8 @@ with its own pull request, and tests passing before the PR is opened.
 | # | Item | Branch | Status |
 |---|---|---|---|
 | 0 | Tests run on every PR (GitHub Actions) | `chore/ci` | ✅ PR #6 |
-| 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | 🔄 PR #5 open; writes to the real sheet, so needs the user's OK to merge |
-| 2 | API: the five endpoints | `feat/api-backend` | ⬜ |
+| 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | ✅ PR #5 |
+| 2 | API: the five endpoints | `feat/api-backend` | 🔄 PR open |
 | 3 | Control panel pages | `feat/web-panel` | ⬜ |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⬜ |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ⬜ |
@@ -37,7 +37,7 @@ with its own pull request, and tests passing before the PR is opened.
 
 ---
 
-## 1. Settings and run-history store 🔄
+## 1. Settings and run-history store ✅
 
 Sheet-backed `_settings` and `_runs` tabs, settings validation with TBD
 placeholder defaults, the runner stub (`python -m pipeline.runner`) and the
@@ -47,9 +47,9 @@ placeholder defaults, the runner stub (`python -m pipeline.runner`) and the
 - [x] One real run: both tabs created and protected, one `success` row in `_runs`
 - [x] PR opened: #5
 - [x] Security review fix: tabs are re-checked and re-locked if their protection was removed or made by hand
-- [ ] Merged
+- [x] Merged (PR #5, with the user's OK since it writes to the real sheet)
 
-## 2. API: the five endpoints ⬜
+## 2. API: the five endpoints 🔄
 
 FastAPI app in `api/`: `GET /status`, `GET /runs`, `POST /runs`, `GET /settings`,
 `PUT /settings`, as specified in the backend plan. It's a thin layer over
@@ -61,10 +61,13 @@ FastAPI app in `api/`: `GET /status`, `GET /runs`, `POST /runs`, `GET /settings`
 - "Run now" hands the run to a **dispatcher**. Locally it starts
   `python -m pipeline.runner` as a separate process. The Cloud Run Job version is
   added in item 7 (decision 15).
-- `/status` includes the TBD placeholder warnings, and a warning when a tab was
-  found unlocked and re-locked ("please check your settings"). Settings aren't
-  wiped in that case, since the owner may have unlocked it on purpose.
-- New dependencies, explained in the PR (rule 5): `fastapi`, `uvicorn`, `httpx` (tests only).
+- `/status` includes the TBD placeholder warnings, and a warning when the API
+  found a tab unlocked and re-locked it ("please check your settings"). The warning
+  lasts until the API restarts. Settings aren't wiped in that case, since the owner
+  may have unlocked it on purpose. Re-locks done by the scheduled job go to its log.
+- New dependencies, explained in the PR (rule 5): `fastapi`, `uvicorn`, `httpx2` (tests only).
+- Without `GOOGLE_OAUTH_CLIENT_ID` set, the API refuses everyone (fails closed).
+- The panel should poll `/status` no faster than every 15 seconds (Sheets read quota).
 - **Done when:** endpoint tests cover success, 401, 403, 409 and 422 for each
   route; no test touches Google; the API runs locally with `uvicorn`.
 
@@ -157,5 +160,4 @@ change settings, and who to ask.
 
 - `chore/claude-plugins` (shared Claude Code plugin settings) is committed locally
   but was never pushed. Decide whether to push it and open a PR.
-- Old local branches `backend-plan` and `chore/editable-install` can be deleted
-  once nothing else needs them.
+- ~~Old local branches `backend-plan` and `chore/editable-install`~~: deleted (both were already in `main`).

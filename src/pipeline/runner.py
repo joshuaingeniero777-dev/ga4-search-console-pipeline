@@ -104,22 +104,28 @@ def run(
     store: Store | None = None,
     steps: Steps = not_built_yet,
     today: date | None = None,
+    run_id: str | None = None,
 ) -> Run:
-    """Run once and return the finished run. Bad dates or a run already going raise before anything is recorded."""
+    """Run once and return the finished run. Bad dates or a run already going raise before anything is recorded.
+
+    Pass `run_id` when the run was already recorded (the API does this for "Run now",
+    so a second click sees it as running straight away).
+    """
     start, end = resolve_range(start, end, today or schedule.today())
     store = store or Store.open()
-    if store.current_run() is not None:
-        raise RunAlreadyInProgress("A run is already in progress. Wait for it to finish, then try again.")
+    if run_id is None:
+        if store.current_run() is not None:
+            raise RunAlreadyInProgress("A run is already in progress. Wait for it to finish, then try again.")
+        run_id = store.start_run(start, end, trigger, triggered_by).id
 
-    current = store.start_run(start, end, trigger, triggered_by)
     try:
         settings = store.read_settings().settings
         result = steps(start, end, settings)
     except Exception as error:
         # The full error goes to the server log; the run history gets the plain-English version.
-        log.exception("Run %s failed", current.id)
-        return store.finish_run(current.id, "failed", None, explain_error(error, "Google"))
-    return store.finish_run(current.id, "success", result.rows_written, result.message)
+        log.exception("Run %s failed", run_id)
+        return store.finish_run(run_id, "failed", None, explain_error(error, "Google"))
+    return store.finish_run(run_id, "success", result.rows_written, result.message)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -128,11 +134,14 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--end", type=date.fromisoformat, help="last day, YYYY-MM-DD")
     parser.add_argument("--trigger", choices=["scheduled", "manual"], default="scheduled")
     parser.add_argument("--triggered-by", default="scheduler")
+    parser.add_argument("--run-id", help="a run already recorded in the run history")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
 
     try:
-        finished = run(args.start, args.end, trigger=args.trigger, triggered_by=args.triggered_by)
+        finished = run(
+            args.start, args.end, trigger=args.trigger, triggered_by=args.triggered_by, run_id=args.run_id
+        )
     # Any failure at all becomes a plain-English message, never a stack trace.
     except Exception as error:  # noqa: BLE001
         print(f"The run didn't start. {explain_error(error, 'Google')}")
