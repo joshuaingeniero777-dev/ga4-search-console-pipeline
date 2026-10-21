@@ -7,6 +7,7 @@ gspread==6.2.1                     # friendlier wrapper for Google Sheets
 
 # Data handling
 pandas==3.0.5                      # note: 3.x, not 2.x — see docs/decisions.md
+pydantic==2.14.1                   # validates control panel settings (shared with the API)
 
 # Alerting
 requests==2.34.2                   # posting to a Slack webhook

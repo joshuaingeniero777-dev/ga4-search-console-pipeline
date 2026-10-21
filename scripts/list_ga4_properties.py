@@ -8,9 +8,9 @@ Run from the repo root:  python scripts/list_ga4_properties.py
 
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.api_core import exceptions
-from google.oauth2 import service_account
 
-KEY_PATH = "service-account.json"
+from pipeline.google_auth import credentials as load_credentials
+
 SCOPES = ["https://www.googleapis.com/auth/analytics.readonly"]
 
 EMPTY_MESSAGE = (
@@ -55,9 +55,7 @@ def explain_error(error: Exception) -> str:
 
 def main() -> None:
     try:
-        credentials = service_account.Credentials.from_service_account_file(
-            KEY_PATH, scopes=SCOPES
-        )
+        credentials = load_credentials(SCOPES)
         client = AnalyticsAdminServiceClient(credentials=credentials)
         rows = collect_properties(client.list_account_summaries())
     except Exception as error:

@@ -5,17 +5,13 @@ end means that when GA4 access arrives, only one thing is untested.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import gspread
 from dotenv import load_dotenv
-from google.oauth2 import service_account
 
-KEY_PATH = "service-account.json"
-
-# Sheets needs a WRITE scope, unlike the read-only scopes in auth_check.
-# Scopes are per-token, so a script that only reads should not request this.
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+from pipeline.google_auth import SHEETS_SCOPES
+from pipeline.google_auth import credentials as load_credentials
 
 
 def main() -> None:
@@ -25,9 +21,7 @@ def main() -> None:
 
     spreadsheet_id = os.environ["SPREADSHEET_ID"]
 
-    credentials = service_account.Credentials.from_service_account_file(
-        KEY_PATH, scopes=SCOPES
-    )
+    credentials = load_credentials(SHEETS_SCOPES)
     client = gspread.authorize(credentials)
 
     # open_by_key uses the ID from the URL. There is also open_by_title,
@@ -35,7 +29,7 @@ def main() -> None:
     spreadsheet = client.open_by_key(spreadsheet_id)
     worksheet = spreadsheet.sheet1
 
-    timestamp = datetime.now(timezone.utc).isoformat()
+    timestamp = datetime.now(UTC).isoformat()
     worksheet.append_row(["test", timestamp, "written by pipeline-runner"])
 
     print(f"Wrote a row to: {spreadsheet.title}")
