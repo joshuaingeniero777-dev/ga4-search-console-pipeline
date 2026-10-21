@@ -1,0 +1,36 @@
+# Runs the test suite on every pull request. A PR is only merged once this passes.
+#
+# Tests never talk to Google, so no service-account.json, .env or other secrets
+# exist here, and none should ever be added to make a test pass.
+
+name: Tests
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.lock.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.lock.txt
+          python -m pip install -e .
+
+      - name: Confirm no credentials are present
+        run: test ! -e service-account.json && test ! -e .env
+
+      - name: Run tests
+        run: python -m pytest -q
