@@ -14,7 +14,8 @@ with its own pull request, and tests passing before the PR is opened.
 - deployment
 - secrets handling
 - alerts that send real email
-- anything that writes to a real Google Sheet outside of tests
+
+Code that *can* write to the real sheet merges without asking; tests never touch the real sheet.
 
 **Claude also stops and asks:**
 - before writing to a real Google Sheet, sending a real email, or deploying anything
@@ -26,7 +27,7 @@ with its own pull request, and tests passing before the PR is opened.
 |---|---|---|---|
 | 0 | Tests run on every PR (GitHub Actions) | `chore/ci` | ✅ PR #6 |
 | 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | ✅ PR #5 |
-| 2 | API: the five endpoints | `feat/api-backend` | 🔄 PR open |
+| 2 | API: the five endpoints | `feat/api-backend` | ✅ PR #7 |
 | 3 | Control panel pages | `feat/web-panel` | ⬜ |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⬜ |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ⬜ |
@@ -49,7 +50,7 @@ placeholder defaults, the runner stub (`python -m pipeline.runner`) and the
 - [x] Security review fix: tabs are re-checked and re-locked if their protection was removed or made by hand
 - [x] Merged (PR #5, with the user's OK since it writes to the real sheet)
 
-## 2. API: the five endpoints 🔄
+## 2. API: the five endpoints ✅
 
 FastAPI app in `api/`: `GET /status`, `GET /runs`, `POST /runs`, `GET /settings`,
 `PUT /settings`, as specified in the backend plan. It's a thin layer over
