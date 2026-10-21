@@ -59,6 +59,20 @@ The control panel is NOT a dashboard. Charts and reporting live in Looker Studio
 8. **Explain changes in plain English** at the end of every task: what changed, why, and how to undo it.
 9. **When unsure, stop and ask.** Do not guess at business rules (thresholds, metrics, recipients).
 
+## How work moves (pull requests and merging)
+
+Work follows `docs/ROADMAP.md`, one item at a time, each on its own branch and PR.
+
+1. **Every PR runs the `Tests` check** (`.github/workflows/tests.yml`: pytest on Python 3.14). Tests must pass with no `service-account.json`, no `.env` and no network access. Never add secrets to CI to make a test pass.
+2. **After opening a PR, wait for the check:** `gh pr checks <number> --watch`. If it fails, fix it on the same branch and push again.
+3. **When the check passes, the agent merges the PR itself:** `gh pr merge <number> --squash --delete-branch`, then `git switch main` and `git pull`. Then mark the item done in `docs/ROADMAP.md` and start the next one. Give the user a short plain-English summary of each merged PR.
+4. **Exception: stop and ask the user before merging** any PR that touches:
+   - deployment
+   - secrets handling
+   - alerts that send real email
+   - anything that writes to a real Google Sheet outside of tests
+5. **Also stop and ask** before writing to a real Google Sheet, sending a real email or deploying anything; when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
+
 ## Commands
 
 Python (from the repo root, venv active):
