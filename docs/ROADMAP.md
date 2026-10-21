@@ -3,7 +3,9 @@
 Everything left to build, in order. One item at a time, each on its own branch
 with its own pull request, and tests passing before the PR is opened.
 
-**Status key:** ✅ done (merged) · 🔄 in progress · ⏳ waiting on a person · ⬜ not started
+**Status key:** ✅ done (merged) · 🔄 in progress · ⏳ waiting on a person · ⏸️ on hold · ⬜ not started
+
+**Order from here:** finish item 4's real sign-in test, then items 5, 6, 8 and 9. Item 7 waits for the billing decision.
 
 **How work moves** (also in `CLAUDE.md`, "How work moves"):
 1. Claude builds an item on its own branch and opens a PR.
@@ -29,10 +31,10 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | ✅ PR #5 |
 | 2 | API: the five endpoints | `feat/api-backend` | ✅ PR #7 |
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
-| 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⏳ built; needs the sign-in client from a person |
+| 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⏳ merged (PR #10); real sign-in test waiting on the sign-in client |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ⬜ |
 | 6 | Alerts | `feat/alerts` | ⬜ |
-| 7 | Deployment | `feat/deploy` | ⬜ |
+| 7 | Deployment | `feat/deploy` | ⏸️ on hold: billing decision waiting on Marisol |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ⬜ |
 | 9 | Owner's guide | `docs/owners-guide` | ⬜ |
 
@@ -110,6 +112,8 @@ accounts (decision 13). Sign-in happens in the API (decision 19).
 - [x] Checked live with placeholder settings: the panel forwards the sign-in to Google
   and the cookie lands on the panel's own address.
 - [ ] **Needs a person:** the steps below.
+- [x] Merged: PR #10.
+- [x] `.env` prepared: empty `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` lines, and a generated `SESSION_SECRET`.
 - [ ] Real sign-in tried with an allowed account and with a personal Gmail account.
 
 **Steps for a person (Google Cloud Console, project `ga4-search-console-pipeline`):**
@@ -139,10 +143,9 @@ metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
 7-day window (decision 3) so late Search Console data corrects itself.
 
 - Re-pulled days overwrite their existing rows, never duplicate them.
-- **Needs a person:** GA4 property ID plus read access, and Search Console
-  access (both still pending in `docs/decisions.md`).
-- **Will ask:** the layout of the data tab(s), e.g. one tab per source or one
-  combined tab. Not decided yet; it shapes the Looker Studio setup.
+- Layout decided: **one tab per source**, a GA4 tab and a Search Console tab (decision 20).
+- Access is confirmed: `GA4_PROPERTY_ID` is in `.env`, and `scripts/access_check.py` read
+  both GA4 and Search Console.
 - **Will ask before:** the first real write of data to the master sheet.
 
 ## 6. Alerts ⬜
@@ -159,15 +162,15 @@ are still TBD placeholders (decision 17), and the panel says so.
   recipients must be on the business's own domains. That would block alerts going
   to outside addresses; a security review suggested it, but it's a business rule.
 
-## 7. Deployment ⬜
+## 7. Deployment ⏸️
 
 - Pipeline as a **Cloud Run Job**, triggered by Cloud Scheduler at **6:00 AM
   America/New_York** (decisions 14, 15).
 - API on **Cloud Run**; control panel on **Vercel** (decision 18).
 - "Run now" in the cloud starts the Cloud Run Job.
 - Secrets live in each host's secret settings, never in the repo.
-- **Blocker:** Cloud Run needs billing turned on, which conflicts with
-  decision 9 (billing off). Someone has to decide this before deployment starts.
+- **On hold:** Cloud Run needs billing turned on, which conflicts with decision 9
+  (billing off). The user is asking Marisol; don't decide it.
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 
