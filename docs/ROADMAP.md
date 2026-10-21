@@ -31,8 +31,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | ✅ PR #5 |
 | 2 | API: the five endpoints | `feat/api-backend` | ✅ PR #7 |
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
-| 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⏳ merged (PR #10); real sign-in test waiting on the sign-in client |
-| 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ⬜ |
+| 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
+| 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | 🔄 PR open; first real run needs the user's OK |
 | 6 | Alerts | `feat/alerts` | ⬜ |
 | 7 | Deployment | `feat/deploy` | ⏸️ on hold: billing decision waiting on Marisol |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ⬜ |
@@ -94,7 +94,7 @@ Plain English throughout; it talks only to the API, never to Google (rule 6).
   load, Run now works and refuses a second click, bad settings are explained.
 - Node.js 24 was already installed.
 
-## 4. Google sign-in for the panel ⏳
+## 4. Google sign-in for the panel ✅
 
 Sign in with Google, limited to **starrwellnesscollective.org** and **joinswc.org**
 accounts (decision 13). Sign-in happens in the API (decision 19).
@@ -111,10 +111,11 @@ accounts (decision 13). Sign-in happens in the API (decision 19).
   sign-in, and returns to sign-in if a session runs out mid-visit.
 - [x] Checked live with placeholder settings: the panel forwards the sign-in to Google
   and the cookie lands on the panel's own address.
-- [ ] **Needs a person:** the steps below.
+- [x] **Needs a person:** the steps below (done 2026-10-21; External, in production).
 - [x] Merged: PR #10.
 - [x] `.env` prepared: empty `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` lines, and a generated `SESSION_SECRET`.
-- [ ] Real sign-in tried with an allowed account and with a personal Gmail account.
+- [x] Real sign-in tried 2026-10-21: joshua@joinswc.org got in and signed out; a personal Gmail
+  account was turned away with the plain-English message. Nothing was changed in the sheet.
 
 **Steps for a person (Google Cloud Console, project `ga4-search-console-pipeline`):**
 1. **Check the Workspace question:** in https://admin.google.com go to *Account > Domains >
@@ -136,13 +137,24 @@ accounts (decision 13). Sign-in happens in the API (decision 19).
 7. Tell Claude it's done. Trying a real sign-in reads the real sheet, so it happens with
    your OK.
 
-## 5. Real data: GA4 + Search Console into the sheet ⬜
+## 5. Real data: GA4 + Search Console into the sheet 🔄
 
 Replace the runner stub with real extract, transform and load steps: pull the
 metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
 7-day window (decision 3) so late Search Console data corrects itself.
 
-- Re-pulled days overwrite their existing rows, never duplicate them.
+- [x] `pipeline/extract.py`: one row per day from GA4 and Search Console, for the metrics in
+  Settings (read-only). `python -m pipeline.extract` previews a pull and writes nothing.
+- [x] `pipeline/load.py`: **GA4** and **Search Console** tabs, locked like the others.
+  - A re-pulled day replaces its row and never duplicates.
+  - Rows and columns are never deleted. A dropped metric keeps its history; a new one adds a column.
+  - Days Google hasn't reported yet are left alone, not written as zero.
+  - Dates are written as real dates (`yyyy-mm-dd`) for Looker Studio.
+- [x] `pipeline/pull.py` is now the real run step. Each source is done separately, so one failing
+  still updates the other, and the run is marked failed with the reason.
+- [x] Read-only preview against the real accounts: GA4 returned 7 days, Search Console 5
+  (the newest 2 not reported yet, as expected).
+- [ ] First real run into the master sheet (needs the user's OK).
 - Layout decided: **one tab per source**, a GA4 tab and a Search Console tab (decision 20).
 - Access is confirmed: `GA4_PROPERTY_ID` is in `.env`, and `scripts/access_check.py` read
   both GA4 and Search Console.

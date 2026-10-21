@@ -149,6 +149,10 @@ class Store:
             self._lock_checked.add(title)
         return worksheet
 
+    def tab(self, title: str, header: list[str]):
+        """A locked tab for pipeline data (created with `header` if it doesn't exist yet)."""
+        return self._tab(title, header)
+
     def _is_locked(self, worksheet) -> bool:
         """True if one protection covers the whole tab, blocks edits, and lets the pipeline edit.
 

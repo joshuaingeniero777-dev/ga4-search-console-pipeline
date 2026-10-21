@@ -3,8 +3,8 @@
     python -m scripts.dev_api
 
 Nothing here touches Google: settings and run history live in memory and vanish
-when it stops, everyone counts as signed in as DEV_USER, and "Run now" runs the
-pipeline stub against the pretend sheet. It only listens on this computer
+when it stops, everyone counts as signed in as DEV_USER, and "Run now" runs a
+stand-in step that pulls nothing from Google. It only listens on this computer
 (127.0.0.1). Never deploy this; the real API is `uvicorn api.main:app`.
 """
 
@@ -36,7 +36,7 @@ class DevDispatcher:
     def dispatch(self, run: Run) -> None:
         def work():
             time.sleep(self.seconds)
-            runner.run(run.start_date, run.end_date, store=self.store, run_id=run.id)
+            runner.run(run.start_date, run.end_date, store=self.store, run_id=run.id, steps=runner.not_built_yet)
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -44,7 +44,7 @@ class DevDispatcher:
 def configure(seconds: float = RUN_SECONDS) -> Store:
     """Point the API at a fresh pretend sheet with one finished run in its history."""
     store = Store(FakeSpreadsheet(), editor_email="dev-pipeline@example.iam.gserviceaccount.com")
-    runner.run(store=store)
+    runner.run(store=store, steps=runner.not_built_yet)
     dispatcher = DevDispatcher(store, seconds)
     app.dependency_overrides[get_store] = lambda: store
     app.dependency_overrides[get_dispatcher] = lambda: dispatcher

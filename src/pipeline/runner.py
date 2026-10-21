@@ -5,9 +5,9 @@ This is what the Cloud Run Job executes, both on schedule and for "Run now":
     python -m pipeline.runner                                  # last 7 days
     python -m pipeline.runner --start 2026-01-01 --end 2026-01-31 --trigger manual --triggered-by someone@joinswc.org
 
-The extract/transform/load/alert steps aren't built yet. Until they are,
-`not_built_yet` stands in: a run checks the dates and settings, records itself,
-and writes no data.
+The real step is pipeline.pull.pull_and_load: GA4 and Search Console into the
+sheet. `not_built_yet` is a stand-in that writes nothing; the tests and the
+pretend-sheet dev server (scripts/dev_api.py) use it so they never reach Google.
 """
 
 import argparse
@@ -40,13 +40,14 @@ class RunAlreadyInProgress(PipelineError):
 class StepResult(NamedTuple):
     rows_written: int
     message: str
+    ok: bool = True  # False: something didn't work; `message` says what, and the run counts as failed
 
 
-Steps = Callable[[date, date, Settings], StepResult]
+Steps = Callable[[date, date, Settings, Store], StepResult]
 
 
-def not_built_yet(start: date, end: date, settings: Settings) -> StepResult:
-    return StepResult(0, "Test run only: data pulling isn't built yet, so nothing was written.")
+def not_built_yet(start: date, end: date, settings: Settings, store: Store) -> StepResult:
+    return StepResult(0, "Test run only: nothing was pulled or written.")
 
 
 def _show(day: date) -> str:
@@ -102,15 +103,22 @@ def run(
     trigger: str = "scheduled",
     triggered_by: str = "scheduler",
     store: Store | None = None,
-    steps: Steps = not_built_yet,
+    steps: Steps | None = None,
     today: date | None = None,
     run_id: str | None = None,
 ) -> Run:
     """Run once and return the finished run. Bad dates or a run already going raise before anything is recorded.
 
     Pass `run_id` when the run was already recorded (the API does this for "Run now",
-    so a second click sees it as running straight away).
+    so a second click sees it as running straight away). `steps` defaults to the real
+    pull (pipeline.pull.pull_and_load).
     """
+    if steps is None:
+        from pipeline.pull import (
+            pull_and_load,  # here, not at the top: pull imports this module
+        )
+
+        steps = pull_and_load
     start, end = resolve_range(start, end, today or schedule.today())
     store = store or Store.open()
     if run_id is None:
@@ -120,12 +128,12 @@ def run(
 
     try:
         settings = store.read_settings().settings
-        result = steps(start, end, settings)
+        result = steps(start, end, settings, store)
     except Exception as error:
         # The full error goes to the server log; the run history gets the plain-English version.
         log.exception("Run %s failed", run_id)
         return store.finish_run(run_id, "failed", None, explain_error(error, "Google"))
-    return store.finish_run(run_id, "success", result.rows_written, result.message)
+    return store.finish_run(run_id, "success" if result.ok else "failed", result.rows_written, result.message)
 
 
 def main(argv: list[str] | None = None) -> None:
