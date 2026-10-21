@@ -88,18 +88,20 @@ pytest
 
 When regenerating the lock file, use `pip freeze --exclude-editable > requirements.lock.txt` so the local editable install isn't written into it.
 
-Backend (once `api/` exists):
+Backend:
 
 ```powershell
-uvicorn api.main:app --reload
+uvicorn api.main:app --reload     # real API: real sheet, needs sign-in set up
+python -m scripts.dev_api         # pretend sheet and pretend sign-in, for working on the panel
 ```
 
-Frontend (once `web/` exists):
+Frontend (`web/`, Next.js 16; read `web/AGENTS.md` before changing it):
 
 ```powershell
 cd web
 npm install
-npm run dev
+npm run dev                       # http://localhost:3000, talks to the API at API_URL
+npm run lint; npm run typecheck; npm test; npm run build
 ```
 
 ## Environment

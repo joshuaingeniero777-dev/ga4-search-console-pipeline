@@ -3,6 +3,9 @@
 
 # Node / frontend
 node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
 
 # Claude Code personal settings
 .claude/settings.local.json
@@ -15,8 +18,14 @@ build/
 
 # Secrets — nothing matching these ever gets committed
 .env
+.env.*
+!.env.example
 *.json
 !package.json
+# The control panel's config files, by name. Not "all JSON in web/": a Google
+# key file downloads with a random name and must stay ignored wherever it lands.
+!web/package-lock.json
+!web/tsconfig.json
 credentials.json
 service-account*.json
 token.json

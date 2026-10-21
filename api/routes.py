@@ -19,13 +19,21 @@ from api.schemas import (
     RunRequest,
     RunResponse,
     RunsResponse,
+    SettingsOptions,
     SettingsResponse,
     SettingsUpdate,
     StatusResponse,
 )
 from pipeline import schedule
 from pipeline.runner import InvalidDateRange, resolve_range
-from pipeline.settings import SettingsInvalid, placeholder_warnings
+from pipeline.settings import (
+    MAX_DROP_PCT,
+    MAX_RECIPIENTS,
+    MIN_DROP_PCT,
+    SettingsInvalid,
+    metric_options,
+    placeholder_warnings,
+)
 from pipeline.store import SettingsConflict, Store
 
 log = logging.getLogger(__name__)
@@ -49,6 +57,12 @@ def get_dispatcher() -> Dispatcher:
 StoreDep = Annotated[Store, Depends(get_store)]
 UserDep = Annotated[str, Depends(current_user)]
 DispatcherDep = Annotated[Dispatcher, Depends(get_dispatcher)]
+
+
+def _options() -> SettingsOptions:
+    return SettingsOptions(
+        **metric_options(), max_recipients=MAX_RECIPIENTS, min_drop_pct=MIN_DROP_PCT, max_drop_pct=MAX_DROP_PCT
+    )
 
 
 def _when(moment: datetime) -> str:
@@ -133,12 +147,15 @@ def get_settings(store: StoreDep) -> SettingsResponse:
     except SettingsInvalid as error:
         # Still return the version, so the panel can save corrected settings over the broken ones.
         version, updated_by = store.settings_meta()
-        return SettingsResponse(settings=None, problem=str(error), version=version, updated_by=updated_by)
+        return SettingsResponse(
+            settings=None, problem=str(error), version=version, updated_by=updated_by, options=_options()
+        )
     return SettingsResponse(
         settings=record.settings,
         version=record.version,
         updated_by=record.updated_by,
         warnings=placeholder_warnings(record.settings),
+        options=_options(),
     )
 
 
@@ -153,4 +170,5 @@ def put_settings(body: SettingsUpdate, user: UserDep, store: StoreDep) -> Settin
         version=record.version,
         updated_by=record.updated_by,
         warnings=placeholder_warnings(record.settings),
+        options=_options(),
     )

@@ -28,7 +28,7 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 0 | Tests run on every PR (GitHub Actions) | `chore/ci` | ✅ PR #6 |
 | 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | ✅ PR #5 |
 | 2 | API: the five endpoints | `feat/api-backend` | ✅ PR #7 |
-| 3 | Control panel pages | `feat/web-panel` | ⬜ |
+| 3 | Control panel pages | `feat/web-panel` | 🔄 PR open |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⬜ |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ⬜ |
 | 6 | Alerts | `feat/alerts` | ⬜ |
@@ -72,21 +72,25 @@ FastAPI app in `api/`: `GET /status`, `GET /runs`, `POST /runs`, `GET /settings`
 - **Done when:** endpoint tests cover success, 401, 403, 409 and 422 for each
   route; no test touches Google; the API runs locally with `uvicorn`.
 
-## 3. Control panel pages ⬜
+## 3. Control panel pages 🔄
 
 Next.js app in `web/` with four pages: **Status**, **Run History**, **Settings**, **Run now**.
 Plain English throughout; it talks only to the API, never to Google (rule 6).
 
-- **First:** fix `.gitignore`. Its `*.json` rule (a safety net for key files)
-  would also hide `web/package.json`'s siblings (`package-lock.json`, `tsconfig.json`).
-  The fix allows JSON under `web/` while keeping key files ignored everywhere.
-- Settings page shows each rule's plain-English error next to the field, and the
-  "still a placeholder" warnings.
-- Run now: optional start/end dates, the same limits the API enforces, and a clear
-  message if a run is already going.
-- **Done when:** component tests pass, `npm run build` succeeds, all four pages
-  work against the local API.
-- **Needs a person:** Node.js LTS installed (checked at the start of this item).
+- [x] `.gitignore` fixed: `web/package-lock.json` and `web/tsconfig.json` are allowed
+  by name. Any other JSON, including a Google key file with a random name, stays
+  ignored everywhere.
+- [x] Settings page checks each rule next to its field before saving, shows the
+  API's plain-English reason for anything else, and shows the "still a placeholder" warnings.
+- [x] Run now: the usual 7 days, or chosen dates; a clear message if a run is already going.
+- [x] `GET /settings` now also returns the metric choices and limits, so the panel never
+  keeps its own copy of the rules.
+- [x] `python -m scripts.dev_api`: the API with a pretend sheet and pretend sign-in, for
+  working on the panel without touching Google.
+- [x] Tests: 29 panel tests; lint, type-check and build pass; GitHub runs them on every PR.
+- [x] Tried end to end: the panel's production build plus the dev API; all four pages
+  load, Run now works and refuses a second click, bad settings are explained.
+- Node.js 24 was already installed.
 
 ## 4. Google sign-in for the panel ⬜
 
@@ -162,3 +166,7 @@ change settings, and who to ask.
 - `chore/claude-plugins` (shared Claude Code plugin settings) is committed locally
   but was never pushed. Decide whether to push it and open a PR.
 - ~~Old local branches `backend-plan` and `chore/editable-install`~~: deleted (both were already in `main`).
+- `npm audit` reports 5 "high" issues, all in the lint tooling (`eslint-config-next` → `fast-glob` →
+  `micromatch` → `braces`). They only run on a developer's computer, never in the panel itself.
+  npm's suggested fix is a downgrade to Next.js 14, so it was not applied. Revisit when
+  `eslint-config-next` updates.

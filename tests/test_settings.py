@@ -5,6 +5,7 @@ import pytest
 from pipeline.settings import (
     SettingsInvalid,
     load_defaults,
+    metric_options,
     parse_settings,
     placeholder_warnings,
 )
@@ -93,3 +94,9 @@ def test_threshold_must_be_for_a_pulled_metric():
 
 def test_unknown_setting_rejected():
     assert "isn't a recognised setting" in problem(colour="blue")
+
+
+def test_every_allowed_metric_has_a_display_name():
+    options = metric_options()
+    assert [m["name"] for m in options["search_console"]] == ["clicks", "impressions", "ctr", "position"]
+    assert all(m["label"] for source in options.values() for m in source)
