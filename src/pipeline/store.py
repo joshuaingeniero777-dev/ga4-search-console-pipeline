@@ -109,7 +109,7 @@ def _mark_stale(run: Run, now: datetime) -> Run:
 
 
 class Store:
-    def __init__(self, spreadsheet, editor_email: str | None = None):
+    def __init__(self, spreadsheet, editor_email: str):
         self._spreadsheet = spreadsheet
         self._editor_email = editor_email
         self._lock_checked: set[str] = set()
@@ -147,7 +147,12 @@ class Store:
         return worksheet
 
     def _is_locked(self, worksheet) -> bool:
-        """True if one protection covers the whole tab, blocks edits, and lets the pipeline edit."""
+        """True if one protection covers the whole tab, blocks edits, and lets the pipeline edit.
+
+        Extra named people are tolerated: Google always adds the sheet's owner, and only
+        someone already allowed by the lock can add more. Groups and "anyone in the
+        domain" are not, because they open the tab to people nobody picked.
+        """
         metadata = self._spreadsheet.fetch_sheet_metadata(
             {"fields": "sheets(properties.sheetId,protectedRanges)"}
         )
@@ -156,12 +161,14 @@ class Store:
                 continue
             for protected in sheet.get("protectedRanges", []):
                 whole_tab = set(protected["range"]) <= {"sheetId"}
-                editors = protected.get("editors", {}).get("users", [])
+                editors = protected.get("editors", {})
                 if (
                     whole_tab
                     and not protected.get("warningOnly", False)
                     and not protected.get("unprotectedRanges")
-                    and (self._editor_email is None or self._editor_email in editors)
+                    and not editors.get("groups")
+                    and not editors.get("domainUsersCanEdit", False)
+                    and self._editor_email in editors.get("users", [])
                 ):
                     return True
         return False
@@ -171,9 +178,8 @@ class Store:
             "range": {"sheetId": worksheet.id},
             "description": "Managed by the pipeline. Change settings in the control panel instead.",
             "warningOnly": False,
+            "editors": {"users": [self._editor_email]},
         }
-        if self._editor_email:
-            protected_range["editors"] = {"users": [self._editor_email]}
         self._spreadsheet.batch_update(
             {"requests": [{"addProtectedRange": {"protectedRange": protected_range}}]}
         )

@@ -53,7 +53,9 @@ FastAPI app in `api/`: `GET /status`, `GET /runs`, `POST /runs`, `GET /settings`
 - "Run now" hands the run to a **dispatcher**. Locally it starts
   `python -m pipeline.runner` as a separate process. The Cloud Run Job version is
   added in item 7 (decision 15).
-- `/status` includes the TBD placeholder warnings.
+- `/status` includes the TBD placeholder warnings, and a warning when a tab was
+  found unlocked and re-locked ("please check your settings"). Settings aren't
+  wiped in that case, since the owner may have unlocked it on purpose.
 - New dependencies, explained in the PR (rule 5): `fastapi`, `uvicorn`, `httpx` (tests only).
 - **Done when:** endpoint tests cover success, 401, 403, 409 and 422 for each
   route; no test touches Google; the API runs locally with `uvicorn`.

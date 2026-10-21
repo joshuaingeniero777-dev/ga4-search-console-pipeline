@@ -172,6 +172,8 @@ def test_hand_made_unlocked_tab_gets_locked(store, spreadsheet):
         {"warningOnly": True, "editors": {"users": [SERVICE_ACCOUNT]}},  # only shows a warning
         {"editors": {"users": ["someone@joinswc.org"]}},  # pipeline isn't an editor
         {"editors": {"users": [SERVICE_ACCOUNT]}, "unprotectedRanges": [{"sheetId": 1}]},  # has a hole
+        {"editors": {"users": [SERVICE_ACCOUNT], "groups": ["staff@joinswc.org"]}},  # a whole group can edit
+        {"editors": {"users": [SERVICE_ACCOUNT], "domainUsersCanEdit": True}},  # anyone in the domain can edit
     ],
 )
 def test_weak_protection_is_replaced(store, spreadsheet, weak_protection):
@@ -193,6 +195,18 @@ def test_partial_range_protection_does_not_count(store, spreadsheet):
     store.list_runs()
 
     assert len(spreadsheet.protections) == 2
+
+
+def test_owner_listed_alongside_pipeline_still_counts_as_locked(store, spreadsheet):
+    # Google always adds the sheet's owner to a lock; that mustn't trigger a re-lock every run.
+    worksheet = hand_made_tab(spreadsheet, RUNS_TAB, store_module.RUNS_HEADER)
+    spreadsheet.protections.append(
+        {"range": {"sheetId": worksheet.id}, "editors": {"users": ["owner@joinswc.org", SERVICE_ACCOUNT]}}
+    )
+
+    store.list_runs()
+
+    assert len(spreadsheet.protections) == 1
 
 
 def test_locked_tab_is_left_alone_and_checked_once(store, spreadsheet):
