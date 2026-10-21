@@ -25,10 +25,11 @@ made without stakeholder input and is open to correction.
 | 17 | Metrics, alert thresholds, and alert recipients ship with placeholder defaults marked TBD | Waiting on Marisol. Code is built so the real values are a settings change, not a code change | Pending — owner to supply values |
 | 18 | API hosted on Cloud Run; control panel hosted on Vercel | Vercel is built for Next.js. The API stays in Google Cloud, next to the pipeline and the service account | Yes — confirmed 2026-10-21. Cloud Run is subject to the billing open question |
 | 19 | Google sign-in happens in the API (Authlib), not the panel. The API keeps a signed, HttpOnly session cookie on the panel's own address (the panel forwards `/backend/*` to the API), sessions last 8 hours, and saves and runs are only accepted from the panel's address | Keeps rule 6 literally true: only `api/` talks to Google. No sign-in tokens in the browser | Yes — confirmed 2026-10-21 |
+| 20 | Data goes in one tab per source: a GA4 tab and a Search Console tab, each one row per day | The two sources have different columns | Yes — confirmed 2026-10-21 |
 
 ## Open questions
 
-- **Cloud Run vs. billing off (decisions 9 and 15 conflict).** Cloud Run requires a billing account linked to the project, even when usage stays inside the free tier. Either billing gets enabled (likely $0/month at this volume, ideally with a budget alert), or runs need a host that doesn't require billing.
+- **Cloud Run vs. billing off (decisions 9 and 15 conflict). Waiting on Marisol (asked 2026-10-21); deployment (roadmap item 7) is on hold until then.** Cloud Run requires a billing account linked to the project, even when usage stays inside the free tier. Either billing gets enabled (likely $0/month at this volume, ideally with a budget alert), or runs need a host that doesn't require billing.
 - Metrics to pull, alert threshold values, and alert recipients: waiting on Marisol (decision 17).
 
 - Who maintains this after handover? Nobody has been named yet.
