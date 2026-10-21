@@ -106,13 +106,19 @@ class Settings(BaseModel):
         return self
 
 
-def describe_validation_error(error: ValidationError) -> str:
-    """Rewrite pydantic's errors as one plain-English line per problem."""
+def describe_errors(errors: list[dict], labels: dict[str, str | None] | None = None) -> str:
+    """Rewrite pydantic's errors as one plain-English line per problem.
+
+    `labels` adds or overrides names; a name mapped to None is left out of the location.
+    """
+    names = {**SECTION_LABELS, **(labels or {})}
     lines = []
-    for problem in error.errors():
+    for problem in errors:
         # List positions (0, 1, ...) mean nothing to the owner, so they're left out.
         where = " > ".join(
-            SECTION_LABELS.get(part, part) for part in problem["loc"] if isinstance(part, str)
+            names.get(part, part)
+            for part in problem["loc"]
+            if isinstance(part, str) and names.get(part, part) is not None
         )
         message = problem["msg"].removeprefix("Value error, ")
         if problem["type"] == "literal_error":
@@ -127,7 +133,7 @@ def parse_settings(data: dict) -> Settings:
     try:
         return Settings.model_validate(data)
     except ValidationError as error:
-        raise SettingsInvalid(describe_validation_error(error)) from None
+        raise SettingsInvalid(describe_errors(error.errors())) from None
 
 
 def _read_defaults_file(path: Path) -> dict:

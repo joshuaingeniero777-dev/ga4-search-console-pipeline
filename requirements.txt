@@ -12,5 +12,9 @@ pydantic==2.14.1                   # validates control panel settings (shared wi
 # Alerting
 requests==2.34.2                   # posting to a Slack webhook
 
+# Control panel API
+fastapi==0.156.5                   # web framework for api/ (built on pydantic)
+uvicorn==0.54.0                    # server that runs the API
+
 # Configuration
 python-dotenv==1.2.3               # loads secrets from a .env file in development

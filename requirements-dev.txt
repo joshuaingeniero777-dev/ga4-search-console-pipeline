@@ -2,4 +2,5 @@
 
 
 pytest==9.1.1              # test runner (Phase 9)
+httpx2==2.16.0             # needed by FastAPI's TestClient in API tests
 ruff==0.16.5               # linter and formatter

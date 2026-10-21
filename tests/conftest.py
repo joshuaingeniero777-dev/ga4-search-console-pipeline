@@ -73,15 +73,33 @@ class FakeSpreadsheet:
         }
 
 
+LOOPBACK = {"127.0.0.1", "::1", "localhost"}
+
+
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
     """Tests must never reach Google. Any attempt to open a connection fails the test."""
 
-    def refuse(*args, **kwargs):
-        raise RuntimeError("A test tried to use the network. Fake the Google call instead.")
+    # Connections to this machine are allowed: on Windows, asyncio's event loop
+    # (used by the API's TestClient) talks to itself over 127.0.0.1.
+    real_connect = socket.socket.connect
+    real_create_connection = socket.create_connection
 
-    monkeypatch.setattr(socket.socket, "connect", refuse)
-    monkeypatch.setattr(socket, "create_connection", refuse)
+    def is_local(address) -> bool:
+        return isinstance(address, tuple) and address[0] in LOOPBACK
+
+    def guarded_connect(sock, address):
+        if not is_local(address):
+            raise RuntimeError("A test tried to use the network. Fake the Google call instead.")
+        return real_connect(sock, address)
+
+    def guarded_create_connection(address, *args, **kwargs):
+        if not is_local(address):
+            raise RuntimeError("A test tried to use the network. Fake the Google call instead.")
+        return real_create_connection(address, *args, **kwargs)
+
+    monkeypatch.setattr(socket.socket, "connect", guarded_connect)
+    monkeypatch.setattr(socket, "create_connection", guarded_create_connection)
 
 
 @pytest.fixture
