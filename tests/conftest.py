@@ -40,6 +40,8 @@ class FakeSpreadsheet:
     def __init__(self):
         self.worksheets: dict[str, FakeWorksheet] = {}
         self.batch_requests: list[dict] = []
+        self.protections: list[dict] = []  # what the real sheet reports as protectedRanges
+        self.metadata_fetches = 0
 
     def worksheet(self, title: str) -> FakeWorksheet:
         if title not in self.worksheets:
@@ -52,6 +54,23 @@ class FakeSpreadsheet:
 
     def batch_update(self, body: dict) -> None:
         self.batch_requests.append(body)
+        for request in body["requests"]:
+            if "addProtectedRange" in request:
+                self.protections.append(request["addProtectedRange"]["protectedRange"])
+
+    def fetch_sheet_metadata(self, params: dict | None = None) -> dict:
+        self.metadata_fetches += 1
+        return {
+            "sheets": [
+                {
+                    "properties": {"sheetId": worksheet.id},
+                    "protectedRanges": [
+                        p for p in self.protections if p["range"].get("sheetId", 0) == worksheet.id
+                    ],
+                }
+                for worksheet in self.worksheets.values()
+            ]
+        }
 
 
 @pytest.fixture(autouse=True)

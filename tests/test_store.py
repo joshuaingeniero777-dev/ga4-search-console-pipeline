@@ -143,3 +143,64 @@ def test_open_without_spreadsheet_id_is_explained(monkeypatch):
 
     with pytest.raises(PipelineError, match="SPREADSHEET_ID is missing"):
         Store.open()
+
+
+# --- tab locking --------------------------------------------------------------
+
+SERVICE_ACCOUNT = "pipeline@example.iam.gserviceaccount.com"
+
+
+def hand_made_tab(spreadsheet, title, header):
+    worksheet = spreadsheet.add_worksheet(title=title, rows=100, cols=len(header))
+    worksheet.append_row(header)
+    return worksheet
+
+
+def test_hand_made_unlocked_tab_gets_locked(store, spreadsheet):
+    worksheet = hand_made_tab(spreadsheet, SETTINGS_TAB, store_module.SETTINGS_HEADER)
+
+    store.read_settings()
+
+    [protection] = spreadsheet.protections
+    assert protection["range"] == {"sheetId": worksheet.id}
+    assert protection["editors"]["users"] == [SERVICE_ACCOUNT]
+
+
+@pytest.mark.parametrize(
+    "weak_protection",
+    [
+        {"warningOnly": True, "editors": {"users": [SERVICE_ACCOUNT]}},  # only shows a warning
+        {"editors": {"users": ["someone@joinswc.org"]}},  # pipeline isn't an editor
+        {"editors": {"users": [SERVICE_ACCOUNT]}, "unprotectedRanges": [{"sheetId": 1}]},  # has a hole
+    ],
+)
+def test_weak_protection_is_replaced(store, spreadsheet, weak_protection):
+    worksheet = hand_made_tab(spreadsheet, RUNS_TAB, store_module.RUNS_HEADER)
+    spreadsheet.protections.append({"range": {"sheetId": worksheet.id}, **weak_protection})
+
+    store.list_runs()
+
+    assert len(spreadsheet.protections) == 2
+
+
+def test_partial_range_protection_does_not_count(store, spreadsheet):
+    worksheet = hand_made_tab(spreadsheet, RUNS_TAB, store_module.RUNS_HEADER)
+    spreadsheet.protections.append(
+        {"range": {"sheetId": worksheet.id, "startRowIndex": 0, "endRowIndex": 1},
+         "editors": {"users": [SERVICE_ACCOUNT]}}
+    )
+
+    store.list_runs()
+
+    assert len(spreadsheet.protections) == 2
+
+
+def test_locked_tab_is_left_alone_and_checked_once(store, spreadsheet):
+    store.read_settings()  # creates and locks the tab
+    fresh = Store(spreadsheet, editor_email=SERVICE_ACCOUNT)
+
+    fresh.read_settings()
+    fresh.read_settings()
+
+    assert len(spreadsheet.protections) == 1
+    assert spreadsheet.metadata_fetches == 1

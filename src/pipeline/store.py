@@ -112,6 +112,7 @@ class Store:
     def __init__(self, spreadsheet, editor_email: str | None = None):
         self._spreadsheet = spreadsheet
         self._editor_email = editor_email
+        self._lock_checked: set[str] = set()
 
     @classmethod
     def open(cls) -> "Store":
@@ -128,12 +129,42 @@ class Store:
 
     def _tab(self, title: str, header: list[str]):
         try:
-            return self._spreadsheet.worksheet(title)
+            worksheet = self._spreadsheet.worksheet(title)
         except gspread.WorksheetNotFound:
             worksheet = self._spreadsheet.add_worksheet(title=title, rows=100, cols=len(header))
             worksheet.append_row(header)
             self._protect(worksheet)
+            self._lock_checked.add(title)
             return worksheet
+
+        # The tab may have been made by hand, or its lock removed since. Settings
+        # decide who gets alerts, so make sure it's locked before trusting it.
+        if title not in self._lock_checked:
+            if not self._is_locked(worksheet):
+                log.warning("Tab %s wasn't locked; locking it again.", title)
+                self._protect(worksheet)
+            self._lock_checked.add(title)
+        return worksheet
+
+    def _is_locked(self, worksheet) -> bool:
+        """True if one protection covers the whole tab, blocks edits, and lets the pipeline edit."""
+        metadata = self._spreadsheet.fetch_sheet_metadata(
+            {"fields": "sheets(properties.sheetId,protectedRanges)"}
+        )
+        for sheet in metadata.get("sheets", []):
+            if sheet["properties"].get("sheetId", 0) != worksheet.id:
+                continue
+            for protected in sheet.get("protectedRanges", []):
+                whole_tab = set(protected["range"]) <= {"sheetId"}
+                editors = protected.get("editors", {}).get("users", [])
+                if (
+                    whole_tab
+                    and not protected.get("warningOnly", False)
+                    and not protected.get("unprotectedRanges")
+                    and (self._editor_email is None or self._editor_email in editors)
+                ):
+                    return True
+        return False
 
     def _protect(self, worksheet) -> None:
         protected_range = {
