@@ -26,6 +26,10 @@ made without stakeholder input and is open to correction.
 | 18 | API hosted on Cloud Run; control panel hosted on Vercel | Vercel is built for Next.js. The API stays in Google Cloud, next to the pipeline and the service account | Yes — confirmed 2026-10-21. Cloud Run is subject to the billing open question |
 | 19 | Google sign-in happens in the API (Authlib), not the panel. The API keeps a signed, HttpOnly session cookie on the panel's own address (the panel forwards `/backend/*` to the API), sessions last 8 hours, and saves and runs are only accepted from the panel's address | Keeps rule 6 literally true: only `api/` talks to Google. No sign-in tokens in the browser | Yes — confirmed 2026-10-21 |
 | 20 | Data goes in one tab per source: a GA4 tab and a Search Console tab, each one row per day | The two sources have different columns | Yes — confirmed 2026-10-21 |
+| 21 | Alerts compare the latest 7 days' total with the 7 days before (each source's weeks end on its newest reported day) | Daily numbers are tiny (0–2 clicks a day), so single-day comparisons would fire constantly | Yes — confirmed 2026-10-21 |
+| 22 | No alert for a metric unless the earlier week's total is at least 20 | Going from 2 clicks to 0 counts as a 100% drop but means nothing | Yes — confirmed 2026-10-21 |
+| 23 | Alerts only check counts (sessions, users, page views, clicks, impressions...), not rates or averages (click-through rate, position, engagement/bounce rate, session length). The Settings page says so next to those | Adding up a week of rates means nothing; what a "bad" rate change is hasn't been decided | Yes — confirmed 2026-10-21. Revisit with Marisol |
+| 24 | The same metric is emailed at most once per 7 days (again after that if it's still down). Sent alerts are logged in a locked `_alerts` tab | Avoids a near-identical email every morning while a drop is in the comparison | Yes — confirmed 2026-10-21 |
 
 ## Open questions
 

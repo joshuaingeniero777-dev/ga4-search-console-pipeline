@@ -56,7 +56,9 @@ export const OPTIONS: SettingsOptions = {
   search_console: [
     { name: "clicks", label: "Clicks" },
     { name: "impressions", label: "Impressions" },
+    { name: "ctr", label: "Click-through rate" },
   ],
+  alertable: ["sessions", "totalUsers", "clicks", "impressions"],
   max_recipients: 3,
   min_drop_pct: 1,
   max_drop_pct: 100,

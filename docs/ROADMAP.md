@@ -32,8 +32,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 2 | API: the five endpoints | `feat/api-backend` | ✅ PR #7 |
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
-| 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | 🔄 PR open; first real run needs the user's OK |
-| 6 | Alerts | `feat/alerts` | ⬜ |
+| 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
+| 6 | Alerts | `feat/alerts` | 🔄 checks built; how to send email still to decide |
 | 7 | Deployment | `feat/deploy` | ⏸️ on hold: billing decision waiting on Marisol |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ⬜ |
 | 9 | Owner's guide | `docs/owners-guide` | ⬜ |
@@ -137,7 +137,7 @@ accounts (decision 13). Sign-in happens in the API (decision 19).
 7. Tell Claude it's done. Trying a real sign-in reads the real sheet, so it happens with
    your OK.
 
-## 5. Real data: GA4 + Search Console into the sheet 🔄
+## 5. Real data: GA4 + Search Console into the sheet ✅
 
 Replace the runner stub with real extract, transform and load steps: pull the
 metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
@@ -154,22 +154,32 @@ metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
   still updates the other, and the run is marked failed with the reason.
 - [x] Read-only preview against the real accounts: GA4 returned 7 days, Search Console 5
   (the newest 2 not reported yet, as expected).
-- [ ] First real run into the master sheet (needs the user's OK).
+- [x] First real run into the master sheet, with the user's OK (2026-10-21, run `7602b02c34a5`): GA4 tab
+  7 days, Search Console tab 5 days, both locked; matches the read-only preview exactly.
 - Layout decided: **one tab per source**, a GA4 tab and a Search Console tab (decision 20).
 - Access is confirmed: `GA4_PROPERTY_ID` is in `.env`, and `scripts/access_check.py` read
   both GA4 and Search Console.
 - **Will ask before:** the first real write of data to the master sheet.
 
-## 6. Alerts ⬜
+## 6. Alerts 🔄
 
-Compare each day against the thresholds in settings and alert the recipients.
-**Switched off automatically** while any of metrics, thresholds or recipients
-are still TBD placeholders (decision 17), and the panel says so.
+Each morning, after the data is written, compare each count metric's latest 7 days with the
+7 days before (decisions 21–24), and email the alert recipients about drops past their level.
 
-- **Will ask:** how alerts are sent. Settings hold email recipients, but the
-  only alerting library installed so far is for a Slack webhook. Sending email
-  needs a chosen mail service.
-- **Will ask before:** sending any real alert.
+- [x] `pipeline/alerts.py`:
+  - Weekly totals ending on each source's newest reported day.
+  - Minimum earlier-week total of 20; counts only.
+  - The same metric at most once per 7 days, with sent alerts logged in a locked `_alerts` tab.
+  - A plain-English email.
+- [x] **Off automatically** while any setting is still a TBD placeholder, or while no sender is
+  set up. The run's message says what *would* have been flagged.
+- [x] An email that fails to send marks the run failed with the reason, and isn't logged as sent,
+  so the next run tries again.
+- [x] Settings page: explains the weekly comparison, and says "Not used yet" next to alert levels
+  on rates.
+- [ ] **Deciding:** how emails are sent. Domain-wide delegation can't be limited to one mailbox (see
+  the PR for item 6's sender).
+- [ ] **Will ask before:** sending any real alert, and before merging the sender (real email).
 - **Needs Marisol:** real metrics, thresholds and recipients, and whether
   recipients must be on the business's own domains. That would block alerts going
   to outside addresses; a security review suggested it, but it's a business rule.

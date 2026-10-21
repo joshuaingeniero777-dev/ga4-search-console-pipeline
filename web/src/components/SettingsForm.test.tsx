@@ -123,3 +123,21 @@ describe("settings rules", () => {
     );
   });
 });
+
+it("says when an alert level won't be used (rates aren't checked yet)", async () => {
+  fakeApi(() =>
+    json(200, someSettings({
+      settings: {
+        metrics: { ga4: ["sessions"], search_console: ["clicks", "ctr"] },
+        alert_thresholds: { ctr: { drop_pct: 10 } },
+        alert_recipients: ["owner@joinswc.org"],
+      },
+    })),
+  );
+  render(<SettingsForm />);
+
+  const rate = await screen.findByLabelText("Click-through rate alert threshold (%)");
+  expect(document.getElementById(rate.getAttribute("aria-describedby") ?? "")?.textContent).toContain("Not used yet");
+  const count = screen.getByLabelText("Clicks alert threshold (%)");
+  expect(count.getAttribute("aria-describedby")).toBeNull();
+});

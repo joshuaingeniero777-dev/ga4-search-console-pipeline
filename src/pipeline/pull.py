@@ -1,4 +1,5 @@
-"""The real run step: pull GA4 and Search Console for the chosen days and write them to the sheet.
+"""The real run step: pull GA4 and Search Console for the chosen days, write them
+to the sheet, then check for drops worth an alert (pipeline/alerts.py).
 
 Each source is pulled and written on its own, so if one fails the other is
 still updated, and the run's message says exactly which one failed and why.
@@ -8,7 +9,7 @@ import logging
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 
-from pipeline import extract, load
+from pipeline import alerts, extract, load
 from pipeline.errors import explain_error
 from pipeline.runner import StepResult
 from pipeline.settings import Settings
@@ -31,6 +32,7 @@ def pull_and_load(
     *,
     ga4: Fetch = extract.fetch_ga4,
     search_console: Fetch = extract.fetch_search_console,
+    sender_for: Callable[[], alerts.Sender | None] = alerts.no_sender,
     now: datetime | None = None,
 ) -> StepResult:
     now = now or datetime.now(UTC)
@@ -54,5 +56,15 @@ def pull_and_load(
         if days < wanted_days:
             note += f" Google hadn't reported the other {_plural(wanted_days - days)} yet; later runs fill them in."
         notes.append(note)
+
+    # Alerts look at everything in the tabs, so they still run if one source failed today.
+    try:
+        alert = alerts.check(settings, store, now, sender_for)
+    except Exception as error:
+        log.exception("Alert check failed")
+        alert = alerts.Outcome(f"Alerts couldn't be checked. {explain_error(error, 'Google Sheets')}", ok=False)
+    notes.append(alert.message)
+    if not alert.ok:
+        problems.append(notes.pop())
 
     return StepResult(written, " ".join(problems + notes), ok=not problems)

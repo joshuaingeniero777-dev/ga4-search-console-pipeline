@@ -28,6 +28,7 @@ from api.schemas import (
 from pipeline import schedule
 from pipeline.runner import InvalidDateRange, resolve_range
 from pipeline.settings import (
+    COUNT_METRICS,
     MAX_DROP_PCT,
     MAX_RECIPIENTS,
     MIN_DROP_PCT,
@@ -62,7 +63,11 @@ DispatcherDep = Annotated[Dispatcher, Depends(get_dispatcher)]
 
 def _options() -> SettingsOptions:
     return SettingsOptions(
-        **metric_options(), max_recipients=MAX_RECIPIENTS, min_drop_pct=MIN_DROP_PCT, max_drop_pct=MAX_DROP_PCT
+        **metric_options(),
+        alertable=sorted(COUNT_METRICS),
+        max_recipients=MAX_RECIPIENTS,
+        min_drop_pct=MIN_DROP_PCT,
+        max_drop_pct=MAX_DROP_PCT,
     )
 
 

@@ -40,6 +40,7 @@ export interface MetricOption {
 export interface SettingsOptions {
   ga4: MetricOption[];
   search_console: MetricOption[];
+  alertable: string[]; // metrics alerts can check; others can have a level, but it isn't used yet
   max_recipients: number;
   min_drop_pct: number;
   max_drop_pct: number;
