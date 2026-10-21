@@ -66,8 +66,11 @@ Python (from the repo root, venv active):
 ```powershell
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.lock.txt
+python -m pip install -e .   # makes `python -m pipeline.<module>` work
 pytest
 ```
+
+When regenerating the lock file, use `pip freeze --exclude-editable > requirements.lock.txt` so the local editable install isn't written into it.
 
 Backend (once `api/` exists):
 
