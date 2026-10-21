@@ -56,6 +56,19 @@ METRIC_LABELS = {
     "ctr": "Click-through rate",
     "position": "Average position in Google results",
 }
+# Metrics that are counts, so 7 days can be added up. Alerts only check these
+# (decision 23); rates and averages like click-through rate aren't checked yet.
+COUNT_METRICS = {
+    "sessions",
+    "totalUsers",
+    "newUsers",
+    "activeUsers",
+    "screenPageViews",
+    "engagedSessions",
+    "keyEvents",
+    "clicks",
+    "impressions",
+}
 MIN_DROP_PCT = 1
 MAX_DROP_PCT = 100
 

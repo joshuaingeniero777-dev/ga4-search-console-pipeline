@@ -47,6 +47,9 @@ RUNS_HEADER = [
     "triggered_by",
 ]
 
+ALERTS_TAB = "_alerts"
+ALERTS_HEADER = ["sent_at", "source", "metric", "drop_pct", "recent_total", "earlier_total", "weeks", "recipients"]
+
 DEFAULTS_AUTHOR = "defaults (TBD placeholders)"
 
 # A run still marked "running" after this long has almost certainly crashed.
@@ -148,6 +151,14 @@ class Store:
                 self.relocked[title] = _now()
             self._lock_checked.add(title)
         return worksheet
+
+    def find_tab(self, title: str):
+        """The tab if it exists (checked and locked like any other), else None. Never creates it."""
+        try:
+            self._spreadsheet.worksheet(title)
+        except gspread.WorksheetNotFound:
+            return None
+        return self._tab(title, [])
 
     def tab(self, title: str, header: list[str]):
         """A locked tab for pipeline data (created with `header` if it doesn't exist yet)."""
@@ -273,6 +284,26 @@ class Store:
                 worksheet.update([_run_to_row(run)], f"A{line}")
                 return run
         raise PipelineError(f"Couldn't find run {run_id} in the run history.")
+
+    # --- alerts -------------------------------------------------------------
+
+    def record_alert(self, row: list) -> None:
+        """Log an alert email that was sent (one row per metric), so repeats can be held back."""
+        self._tab(ALERTS_TAB, ALERTS_HEADER).append_row(row)
+
+    def last_alerts(self) -> dict[tuple[str, str], datetime]:
+        """When each (source, metric) was last emailed about."""
+        worksheet = self.find_tab(ALERTS_TAB)
+        latest: dict[tuple[str, str], datetime] = {}
+        for row in (worksheet.get_all_values()[1:] if worksheet else []):
+            row = _pad(row, len(ALERTS_HEADER))
+            try:
+                sent = datetime.fromisoformat(row[0])
+            except ValueError:
+                continue
+            key = (row[1], row[2])
+            latest[key] = max(sent, latest.get(key, sent))
+        return latest
 
     def list_runs(self, limit: int = 20, now: datetime | None = None) -> list[Run]:
         """Runs newest first. Rows someone mangled by hand are skipped, not fatal."""

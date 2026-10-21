@@ -50,14 +50,22 @@ def merge(existing: list[list], fresh: dict[str, dict], metrics: list[str], tab:
     return [header] + [[rows[day].get(column, "") for column in header] for day in sorted(rows)]
 
 
+def read_daily(store: Store, tab: str) -> list[list]:
+    """The tab's rows (header first), numbers as numbers. Empty if the tab doesn't exist yet."""
+    worksheet = store.find_tab(tab)
+    if worksheet is None:
+        return []
+    return worksheet.get_all_values(
+        value_render_option="UNFORMATTED_VALUE", date_time_render_option="FORMATTED_STRING"
+    )
+
+
 def write_daily(store: Store, tab: str, fresh: dict[str, dict], metrics: list[str], now: datetime) -> int:
     """Merge `fresh` into the tab. Returns how many days were written."""
     if not fresh:
         return 0
     worksheet = store.tab(tab, [DATE_COLUMN, *metrics, UPDATED_COLUMN])
-    existing = worksheet.get_all_values(
-        value_render_option="UNFORMATTED_VALUE", date_time_render_option="FORMATTED_STRING"
-    )
+    existing = read_daily(store, tab)
     table = merge(existing, fresh, metrics, tab, now.strftime("%Y-%m-%d %H:%M UTC"))
 
     # Grow the tab first if needed; Sheets refuses to write past its edge.

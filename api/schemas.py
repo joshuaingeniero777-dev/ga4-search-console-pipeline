@@ -42,6 +42,7 @@ class SettingsOptions(BaseModel):
 
     ga4: list[MetricOption]
     search_console: list[MetricOption]
+    alertable: list[str]  # metrics alerts can check (counts); rates can have a level but it isn't used yet
     max_recipients: int
     min_drop_pct: int
     max_drop_pct: int

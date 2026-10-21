@@ -219,13 +219,16 @@ export function SettingsForm() {
       <fieldset>
         <legend>When to send an alert</legend>
         <p className="muted small" style={{ marginTop: 0 }}>
-          An alert goes out when a number drops by at least this percentage. Leave a box empty for no alert on
-          that number.
+          Each morning the pipeline adds up the latest 7 days and compares them with the 7 days before. An alert
+          goes out when a number drops by at least this percentage, as long as the earlier week had at least 20.
+          Leave a box empty for no alert on that number.
         </p>
         {selected.length === 0 && <p className="muted">Choose some numbers to pull first.</p>}
         {selected.map((metric) => {
           const problem = problems?.thresholds[metric.name];
           const id = `threshold-${metric.name}`;
+          const notChecked = !options.alertable.includes(metric.name);
+          const describedBy = [problem && `${id}-problem`, notChecked && `${id}-note`].filter(Boolean).join(" ");
           return (
             <div key={metric.name} className="field">
               <label htmlFor={id} className="field-label">
@@ -240,10 +243,15 @@ export function SettingsForm() {
                 max={options.max_drop_pct}
                 value={form.thresholds[metric.name] ?? ""}
                 aria-invalid={problem ? true : undefined}
-                aria-describedby={problem ? `${id}-problem` : undefined}
+                aria-describedby={describedBy || undefined}
                 onChange={(e) => update({ thresholds: { ...form.thresholds, [metric.name]: e.target.value } })}
               />
               <span>% drop</span>
+              {notChecked && (
+                <p id={`${id}-note`} className="muted small" style={{ flexBasis: "100%", margin: 0 }}>
+                  Not used yet: alerts only check counts (like sessions and clicks), not rates or averages.
+                </p>
+              )}
               {problem && (
                 <p id={`${id}-problem`} className="error-text">
                   {problem}

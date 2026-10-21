@@ -217,6 +217,7 @@ def test_get_settings_seeds_tbd_defaults(client):
     options = body["options"]
     assert {"name": "sessions", "label": "Sessions"} in options["ga4"]
     assert (options["max_recipients"], options["min_drop_pct"], options["max_drop_pct"]) == (10, 1, 100)
+    assert "clicks" in options["alertable"] and "ctr" not in options["alertable"]
 
 
 def test_put_settings_saves_and_clears_warnings(client):

@@ -162,7 +162,8 @@ def test_both_tabs_written_one_row_per_day(store, spreadsheet):
     assert result.ok and result.rows_written == 12
     assert result.message == (
         "GA4: 7 days updated. "
-        "Search Console: 5 days updated. Google hadn't reported the other 2 days yet; later runs fill them in."
+        "Search Console: 5 days updated. Google hadn't reported the other 2 days yet; later runs fill them in. "
+        "Alerts: no numbers dropped past their alert level."
     )
     ga4_tab = spreadsheet.worksheets[load.GA4_TAB]
     assert ga4_tab.rows[0] == ["date", "sessions", "totalUsers", "updated_at"]
