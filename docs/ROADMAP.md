@@ -28,8 +28,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 0 | Tests run on every PR (GitHub Actions) | `chore/ci` | ✅ PR #6 |
 | 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | ✅ PR #5 |
 | 2 | API: the five endpoints | `feat/api-backend` | ✅ PR #7 |
-| 3 | Control panel pages | `feat/web-panel` | 🔄 PR open |
-| 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⬜ |
+| 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
+| 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⏳ built; needs the sign-in client from a person |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ⬜ |
 | 6 | Alerts | `feat/alerts` | ⬜ |
 | 7 | Deployment | `feat/deploy` | ⬜ |
@@ -72,7 +72,7 @@ FastAPI app in `api/`: `GET /status`, `GET /runs`, `POST /runs`, `GET /settings`
 - **Done when:** endpoint tests cover success, 401, 403, 409 and 422 for each
   route; no test touches Google; the API runs locally with `uvicorn`.
 
-## 3. Control panel pages 🔄
+## 3. Control panel pages ✅
 
 Next.js app in `web/` with four pages: **Status**, **Run History**, **Settings**, **Run now**.
 Plain English throughout; it talks only to the API, never to Google (rule 6).
@@ -92,17 +92,45 @@ Plain English throughout; it talks only to the API, never to Google (rule 6).
   load, Run now works and refuses a second click, bad settings are explained.
 - Node.js 24 was already installed.
 
-## 4. Google sign-in for the panel ⬜
+## 4. Google sign-in for the panel ⏳
 
 Sign in with Google, limited to **starrwellnesscollective.org** and **joinswc.org**
-accounts (decision 13). The panel sends the sign-in token to the API, which
-already checks it (item 2).
+accounts (decision 13). Sign-in happens in the API (decision 19).
 
-- **Needs a person:** create the OAuth client and consent screen in Google Cloud
-  Console, and confirm whether both domains are in the same Google Workspace
-  (this decides whether the consent screen can be "Internal").
-- **Done when:** an allowed account gets in; any other Google account is turned
-  away with a plain message; the panel is never reachable signed-out.
+- [x] `/auth/login`, `/auth/callback`, `/auth/me`, `/auth/logout` in the API (Authlib, PKCE).
+  Session cookie: signed, HttpOnly, SameSite=Lax, HTTPS-only once the panel is on HTTPS, 8 hours.
+- [x] Turned away: personal Gmail, other companies' Workspaces, unverified emails,
+  emails that don't match their domain. People are only ever sent back to a page on
+  the panel itself.
+- [x] Saves, runs and sign-out are refused unless they come from the panel's own address.
+- [x] Locked (nobody gets in) until the client ID, client secret and a long session
+  secret are all set.
+- [x] Panel: every page is behind a sign-in gate; it explains a refused or cancelled
+  sign-in, and returns to sign-in if a session runs out mid-visit.
+- [x] Checked live with placeholder settings: the panel forwards the sign-in to Google
+  and the cookie lands on the panel's own address.
+- [ ] **Needs a person:** the steps below.
+- [ ] Real sign-in tried with an allowed account and with a personal Gmail account.
+
+**Steps for a person (Google Cloud Console, project `ga4-search-console-pipeline`):**
+1. **Check the Workspace question:** in https://admin.google.com go to *Account > Domains >
+   Manage domains*. If both joinswc.org and starrwellnesscollective.org are listed, they're
+   one Workspace.
+2. **Google Auth Platform > Branding:** app name "SWC pipeline control panel", a support
+   email, and the developer contact email.
+3. **Audience:** *Internal* if both domains are one Workspace; otherwise *External*, then
+   **Publish app** so it's "In production". Either way, the API's domain check turns everyone
+   else away.
+4. **Data access:** only `openid`, `email` and `profile`. These are basic scopes, so Google
+   needs no app review.
+5. **Clients > Create client > Web application**, named "Control panel (local)":
+   - Authorized JavaScript origins: `http://localhost:3000`
+   - Authorized redirect URIs: `http://localhost:3000/backend/auth/callback`
+   - The live address (Vercel) is added in item 7.
+6. Put the client ID and secret in `.env` at the repo root, as in `.env.example`, and
+   generate `SESSION_SECRET`. **Never paste the secret into chat or commit it.**
+7. Tell Claude it's done. Trying a real sign-in reads the real sheet, so it happens with
+   your OK.
 
 ## 5. Real data: GA4 + Search Console into the sheet ⬜
 

@@ -249,6 +249,24 @@ button.primary {
   font-weight: 600;
 }
 
+a.button {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  text-decoration: none;
+}
+
+a.button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.account {
+  text-align: right;
+  margin: -0.75rem 0 0.75rem;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;

@@ -1,6 +1,7 @@
 """The five endpoints. Each is a thin layer over the pipeline's store, runner and schedule.
 
-Every endpoint needs a signed-in, allowed user (api.auth.current_user).
+Every endpoint needs a signed-in, allowed user (api.auth.current_user), and
+anything that changes something must come from the panel (api.auth.from_panel).
 
 Google Sheets allows about 60 reads a minute for the service account; /status
 uses about 4, so the panel should poll it no faster than every 15 seconds.
@@ -13,7 +14,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from api.auth import current_user
+from api.auth import current_user, from_panel
 from api.dispatch import Dispatcher, LocalDispatcher
 from api.schemas import (
     RunRequest,
@@ -38,7 +39,7 @@ from pipeline.store import SettingsConflict, Store
 
 log = logging.getLogger(__name__)
 
-router = APIRouter(dependencies=[Depends(current_user)])
+router = APIRouter(dependencies=[Depends(current_user), Depends(from_panel)])
 
 ALL_RUNS = 10_000  # list_runs reads the whole tab anyway; this just means "don't cut any off"
 DISPATCH_FAILED = "The run couldn't be started. Please try again in a minute."

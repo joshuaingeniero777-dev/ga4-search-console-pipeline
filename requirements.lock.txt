@@ -1,6 +1,7 @@
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1
+Authlib==1.9.1
 certifi==2026.7.22
 cffi==2.1.1
 charset-normalizer==3.5.1
@@ -25,6 +26,8 @@ httplib2==0.32.0
 httpx2==2.16.0
 idna==3.19
 iniconfig==2.3.0
+itsdangerous==2.2.0
+joserfc==1.7.7
 numpy==2.5.2
 oauthlib==3.3.1
 opentelemetry-api==1.45.1

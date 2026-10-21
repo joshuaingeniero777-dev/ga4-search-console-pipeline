@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // The panel's pages call /backend/..., which Next.js forwards to the API.
   // The browser only ever talks to the panel itself, never to Google (CLAUDE.md rule 6).
-  // Sign-in (roadmap item 4) replaces this with a forwarder that adds the user's token.
+  // Sign-in goes through here too (/backend/auth/...), so the API's session cookie
+  // belongs to the panel's own address (docs/decisions.md, decision 19).
   async rewrites() {
     return [{ source: "/backend/:path*", destination: `${apiUrl}/:path*` }];
   },
