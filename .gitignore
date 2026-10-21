@@ -7,9 +7,11 @@ node_modules/
 # Claude Code personal settings
 .claude/settings.local.json
 
-# Python bytecode
+# Python bytecode and build metadata
 __pycache__/
 *.py[cod]
+*.egg-info/
+build/
 
 # Secrets — nothing matching these ever gets committed
 .env

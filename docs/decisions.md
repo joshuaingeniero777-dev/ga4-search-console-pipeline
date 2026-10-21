@@ -17,8 +17,17 @@ made without stakeholder input and is open to correction.
 | 9 | Billing left disabled on the Cloud project | GA4 Data, Search Console, and Sheets APIs are free within quota. Avoids tying the project to a card or a 90-day trial | My call — revisit if Phase 10 lands on Cloud Scheduler |
 | 10 | APIs enabled: GA4 Data, Search Console, Sheets only | Least privilege. GA4 Admin API deliberately left off since we read reports, not configuration | My call |
 | 11 | Config via .env + python-dotenv | Keeps environment-specific values out of code. .env.example documents what settings exist without exposing real ones | My call |
+| 12 | Control panel settings and run history stored as protected `_settings` and `_runs` tabs in the master Google Sheet | No new service or billing, survives redeploys on any host, and the owner can see it. Secrets stay in env vars, never in the sheet | Yes — confirmed 2026-10-21 |
+| 13 | Control panel login allowed for starrwellnesscollective.org and joinswc.org Google Workspace accounts | Both domains belong to the business | Yes — confirmed 2026-10-21 |
+| 14 | Daily scheduled run at 6:00 AM, America/New_York | Business timezone; early enough that the sheet is fresh at the start of the workday | Yes — confirmed 2026-10-21 |
+| 15 | Runs (scheduled and "Run now") execute as a Cloud Run Job, not FastAPI background tasks | A Job runs to completion on its own, so a long run isn't cut off when the API finishes responding | Yes — confirmed 2026-10-21. See open question on billing |
+| 16 | "Run now" re-pulls capped at 366 days per run | Keeps a single run inside API quotas and time limits | Yes — confirmed 2026-10-21 |
+| 17 | Metrics, alert thresholds, and alert recipients ship with placeholder defaults marked TBD | Waiting on Marisol. Code is built so the real values are a settings change, not a code change | Pending — owner to supply values |
 
 ## Open questions
+
+- **Cloud Run vs. billing off (decisions 9 and 15 conflict).** Cloud Run requires a billing account linked to the project, even when usage stays inside the free tier. Either billing gets enabled (likely $0/month at this volume, ideally with a budget alert), or runs need a host that doesn't require billing.
+- Metrics to pull, alert threshold values, and alert recipients: waiting on Marisol (decision 17).
 
 - Who maintains this after handover? Nobody has been named yet.
 - Should the repo move to a company GitHub organization? Currently personal.

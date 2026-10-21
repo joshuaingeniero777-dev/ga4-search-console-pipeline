@@ -1,0 +1,19 @@
+# Makes src/pipeline installable so `python -m pipeline.<module>` works from
+# anywhere in the venv. Install once with:  pip install -e .
+#
+# Dependencies are deliberately NOT listed here. requirements.txt and
+# requirements.lock.txt stay the single source of pinned versions.
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swc-pipeline"
+version = "0.1.0"
+description = "GA4 + Search Console pipeline for Starr Wellness Collective"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
