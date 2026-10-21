@@ -70,12 +70,12 @@ def test_status_before_any_run(client):
 
 
 def test_status_after_successful_run(client, store):
-    runner.run(store=store)
+    runner.run(store=store, steps=runner.not_built_yet)
 
     body = client.get("/status").json()
 
     assert body["state"] == "ok"
-    assert "worked" in body["message"] and "nothing was written" in body["message"]
+    assert "worked" in body["message"] and "nothing was pulled or written" in body["message"]
     assert body["last_run"]["status"] == "success"
 
 
@@ -119,8 +119,8 @@ def test_status_warns_when_a_tab_was_relocked(client, spreadsheet):
 # --- GET /runs ----------------------------------------------------------------
 
 def test_runs_newest_first_with_limit(client, store):
-    first = runner.run(store=store)
-    second = runner.run(store=store)
+    first = runner.run(store=store, steps=runner.not_built_yet)
+    second = runner.run(store=store, steps=runner.not_built_yet)
 
     assert [run["id"] for run in client.get("/runs").json()["runs"]] == [second.id, first.id]
     assert len(client.get("/runs?limit=1").json()["runs"]) == 1
@@ -200,7 +200,7 @@ def test_dispatched_run_finishes_the_recorded_row(client, store, dispatcher):
     client.post("/runs")
     recorded = dispatcher.dispatched[0]
 
-    runner.run(recorded.start_date, recorded.end_date, store=store, run_id=recorded.id)
+    runner.run(recorded.start_date, recorded.end_date, store=store, run_id=recorded.id, steps=runner.not_built_yet)
 
     [run] = store.list_runs()
     assert (run.id, run.status, run.triggered_by) == (recorded.id, "success", OWNER)

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 from googleapiclient.errors import HttpError
 
-from pipeline import runner
+from pipeline import pull, runner
 from pipeline.errors import PipelineError
 from pipeline.runner import (
     InvalidDateRange,
@@ -58,11 +58,11 @@ def test_months_before_handles_short_months():
 # --- running ----------------------------------------------------------------
 
 def test_stub_run_succeeds_and_is_recorded(store):
-    finished = runner.run(store=store, today=TODAY)
+    finished = runner.run(store=store, today=TODAY, steps=runner.not_built_yet)
 
     assert finished.status == "success"
     assert finished.rows_written == 0
-    assert "nothing was written" in finished.message
+    assert "nothing was pulled or written" in finished.message
     assert (finished.start_date, finished.end_date) == (date(2026, 10, 14), date(2026, 10, 20))
     assert store.list_runs()[0].id == finished.id
 
@@ -70,7 +70,7 @@ def test_stub_run_succeeds_and_is_recorded(store):
 def test_steps_receive_dates_and_settings(store):
     seen = {}
 
-    def steps(start, end, settings):
+    def steps(start, end, settings, store):
         seen.update(start=start, end=end, settings=settings)
         return StepResult(42, "Pulled 42 rows.")
 
@@ -103,7 +103,7 @@ def test_refuses_to_start_while_another_run_is_going(store):
     store.start_run(date(2026, 10, 14), date(2026, 10, 20), "scheduled", "scheduler")
 
     with pytest.raises(RunAlreadyInProgress):
-        runner.run(store=store, today=TODAY)
+        runner.run(store=store, today=TODAY, steps=runner.not_built_yet)
     assert len(store.list_runs()) == 1
 
 
@@ -117,6 +117,7 @@ def test_bad_dates_are_rejected_before_anything_is_recorded(store):
 
 def test_command_line_success(store, monkeypatch, capsys):
     monkeypatch.setattr(runner.Store, "open", classmethod(lambda cls: store))
+    monkeypatch.setattr(pull, "pull_and_load", runner.not_built_yet)  # the real step would call Google
 
     runner.main([])
 
