@@ -1,4 +1,6 @@
-# Runs the test suite on every pull request. A PR is only merged once this passes.
+# Runs the tests on every pull request: the Python pipeline and API (pytest)
+# and the control panel in web/ (lint, types, tests, build). A PR is only
+# merged once both pass.
 #
 # Tests never talk to Google, so no service-account.json, .env or other secrets
 # exist here, and none should ever be added to make a test pass.
@@ -34,3 +36,33 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

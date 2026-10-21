@@ -212,6 +212,9 @@ def test_get_settings_seeds_tbd_defaults(client):
     assert body["settings"]["alert_recipients"] == ["alerts-tbd@example.com"]
     assert body["version"] and body["problem"] is None
     assert len(body["warnings"]) == 3
+    options = body["options"]
+    assert {"name": "sessions", "label": "Sessions"} in options["ga4"]
+    assert (options["max_recipients"], options["min_drop_pct"], options["max_drop_pct"]) == (10, 1, 100)
 
 
 def test_put_settings_saves_and_clears_warnings(client):

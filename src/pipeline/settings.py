@@ -8,7 +8,7 @@ caught before the pipeline uses it.
 import re
 import tomllib
 from pathlib import Path
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import (
     BaseModel,
@@ -38,6 +38,26 @@ GA4_METRICS = Literal[
     "keyEvents",
 ]
 SEARCH_CONSOLE_METRICS = Literal["clicks", "impressions", "ctr", "position"]
+
+# How each metric is named in the control panel.
+METRIC_LABELS = {
+    "sessions": "Sessions",
+    "totalUsers": "Total users",
+    "newUsers": "New users",
+    "activeUsers": "Active users",
+    "screenPageViews": "Page views",
+    "engagedSessions": "Engaged sessions",
+    "engagementRate": "Engagement rate",
+    "averageSessionDuration": "Average session length",
+    "bounceRate": "Bounce rate",
+    "keyEvents": "Key events (conversions)",
+    "clicks": "Clicks",
+    "impressions": "Impressions",
+    "ctr": "Click-through rate",
+    "position": "Average position in Google results",
+}
+MIN_DROP_PCT = 1
+MAX_DROP_PCT = 100
 
 MAX_RECIPIENTS = 10
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -75,7 +95,7 @@ class Metrics(BaseModel):
 class Threshold(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    drop_pct: int = Field(ge=1, le=100)
+    drop_pct: int = Field(ge=MIN_DROP_PCT, le=MAX_DROP_PCT)
 
 
 class Settings(BaseModel):
@@ -104,6 +124,14 @@ class Settings(BaseModel):
                 "which isn't one of the metrics being pulled."
             )
         return self
+
+
+def metric_options() -> dict[str, list[dict[str, str]]]:
+    """Every metric that can be chosen, per source, with its display name."""
+    return {
+        source: [{"name": name, "label": METRIC_LABELS[name]} for name in get_args(allowed)]
+        for source, allowed in (("ga4", GA4_METRICS), ("search_console", SEARCH_CONSOLE_METRICS))
+    }
 
 
 def describe_errors(errors: list[dict], labels: dict[str, str | None] | None = None) -> str:
