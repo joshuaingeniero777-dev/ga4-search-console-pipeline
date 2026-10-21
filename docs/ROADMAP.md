@@ -5,11 +5,18 @@ with its own pull request, and tests passing before the PR is opened.
 
 **Status key:** ✅ done (merged) · 🔄 in progress · ⏳ waiting on a person · ⬜ not started
 
-**How work moves:** Claude builds an item, opens the PR, and summarises it in
-plain English. A person reviews and merges. Claude then pulls `main` and starts
-the next item.
+**How work moves** (also in `CLAUDE.md`, "How work moves"):
+1. Claude builds an item on its own branch and opens a PR.
+2. The `Tests` check runs on the PR (pytest, Python 3.14, no credentials). If it fails, Claude fixes it on the same branch.
+3. When it passes, Claude squash-merges the PR, deletes the branch, pulls `main`, marks the item done here, gives a short plain-English summary, and starts the next item.
 
-**When Claude stops and asks:**
+**Claude stops and asks before merging** any PR that touches:
+- deployment
+- secrets handling
+- alerts that send real email
+- anything that writes to a real Google Sheet outside of tests
+
+**Claude also stops and asks:**
 - before writing to a real Google Sheet, sending a real email, or deploying anything
 - when something only a person can do is needed (accounts, Cloud Console clicks, OAuth setup, answers from Marisol)
 - when a decision isn't covered by `CLAUDE.md` or `docs/decisions.md`
@@ -17,7 +24,8 @@ the next item.
 
 | # | Item | Branch | Status |
 |---|---|---|---|
-| 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | 🔄 PR #5 open, waiting to be merged |
+| 0 | Tests run on every PR (GitHub Actions) | `chore/ci` | ✅ PR #6 |
+| 1 | Settings and run-history store, plus runner stub | `feat/pipeline-store` | 🔄 PR #5 open; writes to the real sheet, so needs the user's OK to merge |
 | 2 | API: the five endpoints | `feat/api-backend` | ⬜ |
 | 3 | Control panel pages | `feat/web-panel` | ⬜ |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ⬜ |
