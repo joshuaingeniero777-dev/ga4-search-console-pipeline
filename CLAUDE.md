@@ -70,8 +70,10 @@ Work follows `docs/ROADMAP.md`, one item at a time, each on its own branch and P
    - deployment
    - secrets handling
    - alerts that send real email
-   - anything that writes to a real Google Sheet outside of tests
-5. **Also stop and ask** before writing to a real Google Sheet, sending a real email or deploying anything; when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
+
+   Code that *can* write to the real sheet (settings, runs, data) does not need the user's OK to merge, because tests never touch the real sheet.
+5. **Always stop and ask before actually doing it:** running anything against a real Google Sheet, sending a real email, or deploying anything. Read-only checks with a read-only permission are fine.
+6. **Also stop and ask** when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
 
 ## Commands
 
