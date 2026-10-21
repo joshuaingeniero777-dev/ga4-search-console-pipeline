@@ -37,5 +37,7 @@ npm run build
 
 Copy `.env.example` to `.env.local`. `API_URL` is where the API runs (default `http://127.0.0.1:8000`).
 
-Sign-in is roadmap item 4. Until it's added, the real API refuses every request; only the
-pretend-sheet dev API works with the panel.
+Every page is behind Google sign-in, which the API handles (`/backend/auth/...`). The real API
+refuses everything until its sign-in settings are in the repo root's `.env` (see
+`.env.example` and `docs/ROADMAP.md`, item 4). The pretend-sheet dev API counts everyone as
+signed in, so it works with the panel straight away.

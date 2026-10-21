@@ -11,7 +11,7 @@ from scripts import dev_api
 def test_dev_api_runs_on_the_pretend_sheet():
     dev_api.configure(seconds=0)
     try:
-        client = TestClient(app)
+        client = TestClient(app, headers={"Origin": "http://localhost:3000"})
         assert client.get("/status").json()["state"] == "ok"
 
         run_id = client.post("/runs").json()["run"]["id"]

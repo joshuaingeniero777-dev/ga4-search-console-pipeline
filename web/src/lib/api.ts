@@ -59,6 +59,9 @@ export const SERVER_DOWN =
 export const NO_CONNECTION =
   "Can't reach the control panel's server. Check your internet connection and try again.";
 
+/** Fired when the API says nobody is signed in (e.g. the session ran out), so the sign-in gate can show. */
+export const SIGNED_OUT_EVENT = "panel:signed-out";
+
 /** A failed call. `message` is always plain English, ready to show. */
 export class ApiError extends Error {
   constructor(
@@ -82,6 +85,9 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(0, NO_CONNECTION);
   }
 
+  if (response.status === 401 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
+  }
   if (!response.ok) {
     // The API explains every error in {"detail": "..."}. Anything else means it didn't answer.
     let detail: unknown;

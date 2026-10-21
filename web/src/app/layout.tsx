@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { AuthGate } from "@/components/AuthGate";
 import { Nav } from "@/components/Nav";
 
 import "./globals.css";
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Nav />
           </div>
         </header>
-        <main>{children}</main>
+        <main>
+          <AuthGate>{children}</AuthGate>
+        </main>
       </body>
     </html>
   );

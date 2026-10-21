@@ -5,22 +5,28 @@
 Every error comes back as {"detail": "<plain English>"}. The real error, if any,
 goes to the server log, never to the browser.
 
-Settings, read from the environment (or .env locally):
-    GOOGLE_OAUTH_CLIENT_ID  the panel's Google sign-in client ID (required; without it nobody can sign in)
-    ALLOWED_DOMAINS         comma-separated Workspace domains (default: both business domains)
-    PANEL_ORIGIN            where the control panel is served (default: http://localhost:3000)
-    API_DOCS=1              turn on the interactive docs at /docs (off by default)
+Settings, read from the environment (or .env locally). Without the first three,
+nobody can sign in and the API refuses everything:
+    GOOGLE_OAUTH_CLIENT_ID      the panel's Google sign-in client ID
+    GOOGLE_OAUTH_CLIENT_SECRET  its secret (a real secret: never commit or print it)
+    SESSION_SECRET              at least 32 random characters, used to sign the sign-in cookie
+    PANEL_ORIGIN                the panel's address (default: http://localhost:3000)
+    ALLOWED_DOMAINS             comma-separated Workspace domains (default: both business domains)
+    API_DOCS=1                  turn on the interactive docs at /docs (off by default)
 """
 
 import logging
 import os
+import secrets
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 
+from api import auth
 from api.routes import router
 from pipeline.errors import PipelineError
 from pipeline.settings import describe_errors
@@ -49,10 +55,22 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.environ.get("PANEL_ORIGIN", "http://localhost:3000")],
+    allow_origins=[auth.panel_origin()],
     allow_methods=["GET", "POST", "PUT"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Content-Type"],
 )
+# The sign-in cookie: signed so it can't be forged, unreadable to page scripts, sent only
+# to the panel's own site, and only over HTTPS once the panel is on HTTPS. Without a
+# SESSION_SECRET a throwaway key is used, but sign-in stays locked (auth.missing_settings).
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get(auth.SESSION_SECRET_ENV) or secrets.token_urlsafe(32),
+    session_cookie="panel_session",
+    max_age=int(auth.SESSION_LENGTH.total_seconds()),
+    same_site="lax",
+    https_only=auth.panel_origin().startswith("https://"),
+)
+app.include_router(auth.router)
 app.include_router(router)
 
 

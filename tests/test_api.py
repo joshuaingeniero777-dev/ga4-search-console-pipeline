@@ -5,7 +5,7 @@ from datetime import date, datetime
 import pytest
 from fastapi.testclient import TestClient
 
-from api.auth import current_user
+from api.auth import DEFAULT_PANEL_ORIGIN, PANEL_ORIGIN_ENV, current_user
 from api.main import app
 from api.routes import DISPATCH_FAILED, get_dispatcher, get_store
 from pipeline import runner, schedule
@@ -32,11 +32,13 @@ def dispatcher():
 
 
 @pytest.fixture
-def client(store, dispatcher):
+def client(store, dispatcher, monkeypatch):
+    monkeypatch.delenv(PANEL_ORIGIN_ENV, raising=False)
     app.dependency_overrides[get_store] = lambda: store
     app.dependency_overrides[get_dispatcher] = lambda: dispatcher
     app.dependency_overrides[current_user] = lambda: OWNER
-    yield TestClient(app)
+    # Browsers send Origin on saves and runs; the panel's is the default PANEL_ORIGIN.
+    yield TestClient(app, headers={"Origin": DEFAULT_PANEL_ORIGIN})
     app.dependency_overrides.clear()
 
 

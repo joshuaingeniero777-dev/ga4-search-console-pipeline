@@ -24,6 +24,7 @@ made without stakeholder input and is open to correction.
 | 16 | "Run now" re-pulls capped at 366 days per run | Keeps a single run inside API quotas and time limits | Yes — confirmed 2026-10-21 |
 | 17 | Metrics, alert thresholds, and alert recipients ship with placeholder defaults marked TBD | Waiting on Marisol. Code is built so the real values are a settings change, not a code change | Pending — owner to supply values |
 | 18 | API hosted on Cloud Run; control panel hosted on Vercel | Vercel is built for Next.js. The API stays in Google Cloud, next to the pipeline and the service account | Yes — confirmed 2026-10-21. Cloud Run is subject to the billing open question |
+| 19 | Google sign-in happens in the API (Authlib), not the panel. The API keeps a signed, HttpOnly session cookie on the panel's own address (the panel forwards `/backend/*` to the API), sessions last 8 hours, and saves and runs are only accepted from the panel's address | Keeps rule 6 literally true: only `api/` talks to Google. No sign-in tokens in the browser | Yes — confirmed 2026-10-21 |
 
 ## Open questions
 
