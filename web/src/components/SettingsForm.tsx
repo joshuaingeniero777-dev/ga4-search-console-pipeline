@@ -5,24 +5,18 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { ApiError, SERVER_DOWN, api, type Settings, type SettingsOptions, type SettingsResponse } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 
-// The same email check the pipeline uses (src/pipeline/settings.py).
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
 type Source = "ga4" | "search_console";
 
 interface Form {
   ga4: string[];
   search_console: string[];
   thresholds: Record<string, string>; // metric -> text typed in the box ("" = no alert)
-  recipients: string[];
 }
 
 interface Problems {
   ga4?: string;
   search_console?: string;
   thresholds: Record<string, string>;
-  recipients: Record<number, string>;
-  recipientsOverall?: string;
 }
 
 type Message = { tone: "good" | "bad"; text: string; conflict?: boolean };
@@ -34,12 +28,11 @@ export function toForm(settings: Settings | null): Form {
     thresholds: Object.fromEntries(
       Object.entries(settings?.alert_thresholds ?? {}).map(([metric, t]) => [metric, String(t.drop_pct)]),
     ),
-    recipients: settings?.alert_recipients.length ? [...settings.alert_recipients] : [""],
   };
 }
 
 export function check(form: Form, options: SettingsOptions): Problems {
-  const problems: Problems = { thresholds: {}, recipients: {} };
+  const problems: Problems = { thresholds: {} };
   if (form.ga4.length === 0) problems.ga4 = "Choose at least one.";
   if (form.search_console.length === 0) problems.search_console = "Choose at least one.";
 
@@ -53,28 +46,11 @@ export function check(form: Form, options: SettingsOptions): Problems {
     }
   }
 
-  const seen = new Set<string>();
-  form.recipients.forEach((raw, index) => {
-    const address = raw.trim().toLowerCase();
-    if (!address) return;
-    if (!EMAIL.test(address)) problems.recipients[index] = "This isn't a valid email address.";
-    else if (seen.has(address)) problems.recipients[index] = "This address is listed twice.";
-    seen.add(address);
-  });
-  const filled = form.recipients.filter((r) => r.trim()).length;
-  if (filled === 0) problems.recipientsOverall = "Add at least one person to receive alerts.";
-  if (filled > options.max_recipients) problems.recipientsOverall = `Up to ${options.max_recipients} people.`;
   return problems;
 }
 
 function hasProblems(problems: Problems): boolean {
-  return Boolean(
-    problems.ga4 ||
-      problems.search_console ||
-      problems.recipientsOverall ||
-      Object.keys(problems.thresholds).length ||
-      Object.keys(problems.recipients).length,
-  );
+  return Boolean(problems.ga4 || problems.search_console || Object.keys(problems.thresholds).length);
 }
 
 export function toSettings(form: Form, options: SettingsOptions): Settings {
@@ -86,8 +62,8 @@ export function toSettings(form: Form, options: SettingsOptions): Settings {
       .filter((metric) => (form.thresholds[metric] ?? "").trim())
       .map((metric) => [metric, { drop_pct: Number(form.thresholds[metric]) }]),
   );
-  const alert_recipients = form.recipients.map((r) => r.trim()).filter(Boolean);
-  return { metrics, alert_thresholds, alert_recipients };
+  // Alerts go to Slack (decision 26); saving also clears any email list left from the old placeholders.
+  return { metrics, alert_thresholds, alert_recipients: [] };
 }
 
 // The version marks the last save. Today it's that save's time, but the API doesn't
@@ -263,49 +239,14 @@ export function SettingsForm() {
       </fieldset>
 
       <fieldset>
-        <legend>Who gets alerts</legend>
-        {form.recipients.map((recipient, index) => {
-          const problem = problems?.recipients[index];
-          const id = `recipient-${index}`;
-          return (
-            <div key={index} className="field">
-              <label htmlFor={id} className="field-label">
-                Email address {form.recipients.length > 1 ? index + 1 : ""}
-              </label>
-              <input
-                id={id}
-                type="email"
-                autoComplete="off"
-                value={recipient}
-                aria-invalid={problem ? true : undefined}
-                aria-describedby={problem ? `${id}-problem` : undefined}
-                onChange={(e) =>
-                  update({ recipients: form.recipients.map((r, i) => (i === index ? e.target.value : r)) })
-                }
-              />
-              {form.recipients.length > 1 && (
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => update({ recipients: form.recipients.filter((_, i) => i !== index) })}
-                >
-                  Remove
-                </button>
-              )}
-              {problem && (
-                <p id={`${id}-problem`} className="error-text">
-                  {problem}
-                </p>
-              )}
-            </div>
-          );
-        })}
-        {form.recipients.length < options.max_recipients && (
-          <button type="button" onClick={() => update({ recipients: [...form.recipients, ""] })}>
-            Add another person
-          </button>
-        )}
-        {problems?.recipientsOverall && <p className="error-text">{problems.recipientsOverall}</p>}
+        <legend>Where alerts go</legend>
+        <p style={{ margin: 0 }}>
+          Alerts are posted to the pipeline&apos;s Slack channel. Anyone in that channel sees them.
+        </p>
+        <p className="muted small" style={{ marginBottom: 0 }}>
+          The channel can&apos;t be changed here. Changing it means making a new Slack link for the pipeline; the
+          owner&apos;s guide explains how.
+        </p>
       </fieldset>
 
       {message && (

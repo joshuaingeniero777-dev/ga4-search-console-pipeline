@@ -27,7 +27,7 @@ The control panel is NOT a dashboard. Charts and reporting live in Looker Studio
 
 1. **Status**: did the last run succeed, when is the next one, plain-English reason if it failed
 2. **Run history**: list of past runs with outcome
-3. **Settings**: metrics pulled, alert thresholds, alert recipients
+3. **Settings**: metrics pulled and alert thresholds. Alerts go to a Slack channel set by a webhook (a secret), so the channel isn't editable in the panel (decision 26)
 4. **Run now**: trigger a run, with an optional date range for re-pulls
 
 ### API endpoints (FastAPI)

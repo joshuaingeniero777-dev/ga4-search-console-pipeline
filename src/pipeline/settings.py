@@ -86,6 +86,11 @@ SECTION_LABELS = {
 }
 
 
+OLD_PLACEHOLDERS = (
+    "The saved settings are still the old placeholders. Open Settings, check the metrics and alert levels, and save."
+)
+
+
 class SettingsInvalid(PipelineError):
     """Settings break the rules. The message says which one and why, in plain English."""
 
@@ -116,7 +121,8 @@ class Settings(BaseModel):
 
     metrics: Metrics
     alert_thresholds: dict[str, Threshold]
-    alert_recipients: list[str] = Field(min_length=1, max_length=MAX_RECIPIENTS)
+    # Only for an email sender, which is kept but unused: alerts go to Slack (decision 26).
+    alert_recipients: list[str] = Field(default_factory=list, max_length=MAX_RECIPIENTS)
 
     @field_validator("alert_recipients")
     @classmethod
@@ -193,8 +199,13 @@ def placeholder_warnings(settings: Settings, path: Path = DEFAULTS_PATH) -> list
     data = _read_defaults_file(path)
     tbd = data.pop("tbd", {}).get("sections", [])
     defaults = parse_settings(data)
-    return [
+    warnings = [
         f"{SECTION_LABELS[section]} still use the placeholder defaults and need to be set."
         for section in tbd
         if getattr(settings, section) == getattr(defaults, section)
     ]
+    # The first placeholders used a reserved example.com address. Settings saved before
+    # Marisol's choices still have it, so treat them as unset until someone saves again.
+    if any(address.endswith("@example.com") for address in settings.alert_recipients):
+        warnings.append(OLD_PLACEHOLDERS)
+    return warnings

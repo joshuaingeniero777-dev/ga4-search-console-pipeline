@@ -63,7 +63,7 @@ def test_status_before_any_run(client):
     assert body["state"] == "never_run"
     assert body["message"] == "The pipeline hasn't run yet."
     assert body["last_run"] is None
-    assert len(body["warnings"]) == 3  # metrics, thresholds, recipients still TBD
+    assert body["warnings"] == []  # Marisol's settings, nothing left as a placeholder
     next_run = datetime.fromisoformat(body["next_run_at"])
     assert (next_run.hour, next_run.minute) == (6, 0)
     assert next_run.utcoffset() == next_run.astimezone(schedule.TIMEZONE).utcoffset()
@@ -208,12 +208,13 @@ def test_dispatched_run_finishes_the_recorded_row(client, store, dispatcher):
 
 # --- GET and PUT /settings ------------------------------------------------------
 
-def test_get_settings_seeds_tbd_defaults(client):
+def test_get_settings_seeds_marisols_defaults(client):
     body = client.get("/settings").json()
 
-    assert body["settings"]["alert_recipients"] == ["alerts-tbd@example.com"]
+    assert body["settings"]["alert_thresholds"]["impressions"] == {"drop_pct": 25}
+    assert body["settings"]["alert_recipients"] == []
     assert body["version"] and body["problem"] is None
-    assert len(body["warnings"]) == 3
+    assert body["warnings"] == []
     options = body["options"]
     assert {"name": "sessions", "label": "Sessions"} in options["ga4"]
     assert (options["max_recipients"], options["min_drop_pct"], options["max_drop_pct"]) == (10, 1, 100)
