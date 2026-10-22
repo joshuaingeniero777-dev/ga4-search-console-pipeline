@@ -1,4 +1,6 @@
-"""Sending alert emails from the alerts mailbox (docs/decisions.md, decision 25).
+"""Sending alert emails from an alerts mailbox. KEPT BUT UNUSED: alerts go to Slack
+(pipeline/slack.py; docs/decisions.md, decisions 26 and 28). To switch to email, make
+pull.py use mail.configured_sender instead of slack.configured_sender.
 
 The mailbox (ALERT_SENDER, e.g. alerts@joinswc.org) signed in once with
 scripts/authorize_alert_mailbox.py and allowed "send email" only. That saved
@@ -41,6 +43,8 @@ def message(sender: str, recipients: list[str], subject: str, body: str) -> Emai
 
 
 class GmailSender:
+    service = "Gmail"
+
     def __init__(self, sender: str, refresh_token: str, client_id: str, client_secret: str, service=None):
         self.sender = sender
         if service is None:
@@ -54,6 +58,9 @@ class GmailSender:
             )
             service = build("gmail", "v1", credentials=permission, cache_discovery=False)
         self._service = service
+
+    def where(self, recipients: list[str]) -> str:
+        return "by email to 1 person" if len(recipients) == 1 else f"by email to {len(recipients)} people"
 
     def send(self, recipients: list[str], subject: str, body: str) -> None:
         raw = base64.urlsafe_b64encode(message(self.sender, recipients, subject, body).as_bytes()).decode()

@@ -9,9 +9,9 @@ gspread==6.2.1                     # friendlier wrapper for Google Sheets
 pandas==3.0.5                      # note: 3.x, not 2.x — see docs/decisions.md
 pydantic==2.14.1                   # validates control panel settings (shared with the API)
 
-# Alerting (emails go out through the Gmail API client above)
-google-auth-oauthlib==1.4.1        # one-time sign-in of the alerts mailbox (already installed with gspread)
-requests==2.34.2                   # plain web requests, used by the setup scripts
+# Alerting
+requests==2.34.2                   # posts alerts to Slack; also used by the setup scripts
+google-auth-oauthlib==1.4.1        # one-time sign-in for the unused email sender (already installed with gspread)
 
 # Control panel API
 fastapi==0.156.5                   # web framework for api/ (built on pydantic)

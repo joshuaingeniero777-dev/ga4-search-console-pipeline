@@ -2,7 +2,7 @@
 
 For each count metric with an alert level in Settings, add up the latest 7 days
 and the 7 days before that. If the latest week is down by at least the alert
-level, email the alert recipients. Daily numbers here are tiny (0-2 clicks a
+level, post an alert to the pipeline's Slack channel (decision 26). Daily numbers here are tiny (0-2 clicks a
 day), so single days would cry wolf; weekly totals don't.
 
 - The "latest 7 days" end on the newest day the source has reported. Search
@@ -11,9 +11,9 @@ day), so single days would cry wolf; weekly totals don't.
 - No alert unless the earlier week's total is at least MIN_EARLIER_TOTAL;
   going from 2 clicks to 0 is "100%" but means nothing.
 - Only counts are checked (COUNT_METRICS); rates like click-through rate aren't yet.
-- The same metric is emailed at most once per REPEAT_AFTER.
+- The same metric is alerted on at most once per REPEAT_AFTER.
 - Alerts are off, and only described in the run's message, while any setting
-  is still a TBD placeholder or no sender is set up.
+  is still a placeholder or the Slack link isn't set up.
 """
 
 import logging
@@ -65,6 +65,10 @@ class Drop(NamedTuple):
 
 
 class Sender(Protocol):
+    service: str  # "Slack" or "Gmail", for explaining failures
+
+    def where(self, recipients: list[str]) -> str: ...  # e.g. "to the Slack channel"
+
     def send(self, recipients: list[str], subject: str, body: str) -> None: ...
 
 
@@ -131,7 +135,7 @@ def _number(value: float) -> str:
     return f"{value:,.0f}"
 
 
-def email(drops: list[Drop]) -> tuple[str, str]:
+def alert_text(drops: list[Drop]) -> tuple[str, str]:
     """Subject and plain-text body. Written for someone who isn't technical."""
     subject = "Website numbers dropped: " + (
         drops[0].summary() if len(drops) == 1 else f"{len(drops)} numbers are down this week"
@@ -157,9 +161,8 @@ def email(drops: list[Drop]) -> tuple[str, str]:
         "Small numbers can swing a lot from week to week, so this may be nothing to worry about.",
         "The day-by-day numbers are in the master Google Sheet (GA4 and Search Console tabs) and in Looker Studio.",
         "",
-        "You won't get another email about the same number for 7 days.",
-        "You're getting this because you're on the alert list. To change who gets alerts, or the alert",
-        "levels, go to Settings in the pipeline's control panel.",
+        "There won't be another alert about the same number for 7 days.",
+        "To change the alert levels, go to Settings in the pipeline's control panel.",
     ]
     return subject, "\n".join(lines)
 
@@ -181,25 +184,26 @@ def check(
         return Outcome(f"Alerts are off until the placeholder settings are replaced; they would have flagged: {found}.")
     sender = sender_for()
     if sender is None:
-        return Outcome(f"Alerts are off because no sending mailbox is set up yet; they would have flagged: {found}.")
+        return Outcome(f"Alerts are off because the Slack link isn't set up yet; they would have flagged: {found}.")
 
     last = store.last_alerts()
     due = [d for d in drops if now - last.get((d.source, d.metric), datetime.min.replace(tzinfo=now.tzinfo)) >= REPEAT_AFTER]
     if not due:
-        return Outcome(f"Alerts: still down ({found}), already emailed in the last 7 days.")
+        return Outcome(f"Alerts: still down ({found}), already sent in the last 7 days.")
 
-    subject, body = email(due)
+    subject, body = alert_text(due)
     recipients = list(settings.alert_recipients)
     try:
         sender.send(recipients, subject, body)
-    except Exception as error:
-        log.exception("Alert email failed")
-        return Outcome(f"The alert email couldn't be sent. {explain_error(error, 'Gmail')}", ok=False)
+    # Any failure becomes a plain-English reason. Only that reason is logged, never the raw
+    # error, because it could contain the Slack link (a secret).
+    except Exception as error:  # noqa: BLE001
+        log.error("Alert couldn't be sent: %s", explain_error(error, sender.service))
+        return Outcome(f"The alert couldn't be sent. {explain_error(error, sender.service)}", ok=False)
 
     for d in due:
         store.record_alert(
             [now.isoformat(), d.source, d.metric, round(d.drop_pct, 1), d.recent_total, d.earlier_total,
-             f"{_days(d.recent_end)} vs {_days(d.recent_end - timedelta(days=WINDOW_DAYS))}", ", ".join(recipients)]
+             f"{_days(d.recent_end)} vs {_days(d.recent_end - timedelta(days=WINDOW_DAYS))}", sender.where(recipients)]
         )
-    people = "1 person" if len(recipients) == 1 else f"{len(recipients)} people"
-    return Outcome(f"Alert emailed to {people}: {', '.join(d.summary() for d in due)}.")
+    return Outcome(f"Alert sent {sender.where(recipients)}: {', '.join(d.summary() for d in due)}.")

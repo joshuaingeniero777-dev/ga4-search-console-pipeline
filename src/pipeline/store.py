@@ -48,7 +48,7 @@ RUNS_HEADER = [
 ]
 
 ALERTS_TAB = "_alerts"
-ALERTS_HEADER = ["sent_at", "source", "metric", "drop_pct", "recent_total", "earlier_total", "weeks", "recipients"]
+ALERTS_HEADER = ["sent_at", "source", "metric", "drop_pct", "recent_total", "earlier_total", "weeks", "sent_to"]
 
 DEFAULTS_AUTHOR = "defaults (TBD placeholders)"
 
