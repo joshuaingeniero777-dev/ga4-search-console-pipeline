@@ -35,8 +35,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
 | 6 | Alerts | `feat/alerts` | 🔄 checks merged (PR #13), Marisol's settings in; Slack sender next |
 | 7 | Deployment | `feat/deploy` | ⏸️ billing approved ($5 cap); cap setup awaits the user's OK |
-| 8 | Claude Code skills for the owner | `feat/owner-skills` | 🔄 PR open |
-| 9 | Owner's guide | `docs/owners-guide` | ⬜ |
+| 8 | Claude Code skills for the owner | `feat/owner-skills` | ✅ PR #16; owner to try them |
+| 9 | Owner's guide | `docs/owners-guide` | ✅ `docs/owners-guide.md`; contacts to fill at handover |
 
 ---
 
@@ -202,7 +202,7 @@ Each morning, after the data is written, compare each count metric's latest 7 da
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 
-## 8. Claude Code skills for the owner 🔄
+## 8. Claude Code skills for the owner ✅
 
 Plain-English slash commands in `.claude/skills/`:
 - **`/health-check`**: is everything working? Last run, next run, access to Google, placeholder warnings.
@@ -219,11 +219,17 @@ Plain-English slash commands in `.claude/skills/`:
   Only when typed.
 - [ ] Each skill tried end-to-end by the owner. A real `/rerun` writes to the sheet, so it needs her OK.
 
-## 9. Owner's guide ⬜
+## 9. Owner's guide ✅
 
-`docs/owners-guide.md`: one page for Marisol, no jargon. It covers what the
-pipeline does, how to check it's working, what to do when something fails, how to
-change settings, and who to ask.
+`docs/owners-guide.md`, one page for Marisol with no jargon:
+- what runs each morning, and how to tell it's working (Status page, `/health-check`);
+- what a Slack alert means;
+- the common problems and what to do;
+- how to change settings, re-collect days, add a number, or change the Slack channel;
+- where things are, costs and the $5 cap, and who to ask.
+
+- [ ] **At handover:** fill in the "Who to ask" names and contacts.
+- [ ] Update it when the cloud run and Slack alerts are live (it currently says they're being finished).
 
 ---
 
