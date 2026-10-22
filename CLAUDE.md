@@ -91,7 +91,8 @@ When regenerating the lock file, use `pip freeze --exclude-editable > requiremen
 Backend:
 
 ```powershell
-python -m pipeline.extract        # preview what a run would pull (read-only, writes nothing)
+python -m scripts.health_check    # is everything working? (read-only checklist; /health-check explains it)
+python -m pipeline.extract        # preview what a run would pull (read-only); --ga4-metrics NAME to try a metric
 python -m pipeline.runner         # one real run: pulls and writes to the real sheet (ask first)
 uvicorn api.main:app --reload     # real API: real sheet, needs sign-in set up
 python -m scripts.dev_api         # pretend sheet and pretend sign-in, for working on the panel

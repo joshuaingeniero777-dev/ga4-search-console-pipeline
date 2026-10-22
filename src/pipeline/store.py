@@ -112,12 +112,16 @@ def _mark_stale(run: Run, now: datetime) -> Run:
 
 
 class Store:
-    def __init__(self, spreadsheet, editor_email: str):
+    def __init__(self, spreadsheet, editor_email: str, read_only: bool = False):
         self._spreadsheet = spreadsheet
         self._editor_email = editor_email
+        # Read-only (the health check): never creates or re-locks a tab, only reports.
+        self._read_only = read_only
         self._lock_checked: set[str] = set()
         # Tabs this Store found unlocked and locked again, and when. Shown on the status page.
         self.relocked: dict[str, datetime] = {}
+        # Read-only mode: tabs found unlocked (and left as they were).
+        self.unlocked: set[str] = set()
 
     @classmethod
     def open(cls) -> "Store":
@@ -136,6 +140,8 @@ class Store:
         try:
             worksheet = self._spreadsheet.worksheet(title)
         except gspread.WorksheetNotFound:
+            if self._read_only:
+                raise PipelineError(f"The {title} tab doesn't exist yet. The first run creates it.") from None
             worksheet = self._spreadsheet.add_worksheet(title=title, rows=100, cols=len(header))
             worksheet.append_row(header)
             self._protect(worksheet)
@@ -145,7 +151,10 @@ class Store:
         # The tab may have been made by hand, or its lock removed since. Settings
         # decide who gets alerts, so make sure it's locked before trusting it.
         if title not in self._lock_checked:
-            if not self._is_locked(worksheet):
+            locked = self._is_locked(worksheet)
+            if not locked and self._read_only:
+                self.unlocked.add(title)
+            elif not locked:
                 log.warning("Tab %s wasn't locked; locking it again.", title)
                 self._protect(worksheet)
                 self.relocked[title] = _now()
