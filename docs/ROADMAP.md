@@ -33,8 +33,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
-| 6 | Alerts | `feat/alerts` | 🔄 checks built; how to send email still to decide |
-| 7 | Deployment | `feat/deploy` | ⏸️ on hold: billing decision waiting on Marisol |
+| 6 | Alerts | `feat/alerts` | 🔄 checks merged (PR #13), Marisol's settings in; Slack sender next |
+| 7 | Deployment | `feat/deploy` | ⏸️ billing approved ($5 cap); cap setup awaits the user's OK |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ⬜ |
 | 9 | Owner's guide | `docs/owners-guide` | ⬜ |
 
@@ -177,7 +177,13 @@ Each morning, after the data is written, compare each count metric's latest 7 da
   so the next run tries again.
 - [x] Settings page: explains the weekly comparison, and says "Not used yet" next to alert levels
   on rates.
-- [ ] **Deciding:** how emails are sent. Domain-wide delegation can't be limited to one mailbox (see
+- [x] Merged: PR #13 (what to alert on; no sending).
+- [x] Marisol's choices (decisions 25–26): sessions, total users, clicks and impressions, each at 25%;
+  alerts go to **Slack**, not email. The defaults no longer have TBD placeholders.
+  - The Settings page says alerts go to the pipeline's Slack channel, instead of showing an email list.
+  - Settings saved before her choices (they contain an `@example.com` address) are still flagged as
+    placeholders, so alerts stay off until someone saves Marisol's settings.
+- [ ] **Superseded by Slack:** how emails are sent. Domain-wide delegation can't be limited to one mailbox (see
   the PR for item 6's sender).
 - [ ] **Will ask before:** sending any real alert, and before merging the sender (real email).
 - **Needs Marisol:** real metrics, thresholds and recipients, and whether
@@ -191,8 +197,8 @@ Each morning, after the data is written, compare each count metric's latest 7 da
 - API on **Cloud Run**; control panel on **Vercel** (decision 18).
 - "Run now" in the cloud starts the Cloud Run Job.
 - Secrets live in each host's secret settings, never in the repo.
-- **On hold:** Cloud Run needs billing turned on, which conflicts with decision 9
-  (billing off). The user is asking Marisol; don't decide it.
+- **Billing:** Marisol approved it with a $5/month maximum (decision 9). A cap that warns at $3 and
+  switches billing off at $5 has been proposed; **don't build it until the user approves.**
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 
