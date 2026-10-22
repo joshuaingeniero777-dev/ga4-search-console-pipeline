@@ -24,7 +24,7 @@ from google.analytics.data_v1beta.types import (
 from googleapiclient.discovery import build
 
 from pipeline import schedule
-from pipeline.errors import PipelineError, explain_error
+from pipeline.errors import PipelineError, explain_error, status_code
 from pipeline.google_auth import READONLY_SCOPES, credentials
 from pipeline.runner import default_range
 from pipeline.settings import load_defaults
@@ -112,20 +112,27 @@ def _print(title: str, daily: Daily, metrics: list[str]) -> None:
 
 def main(argv: list[str] | None = None) -> None:
     first, last = default_range(schedule.today())  # the same days a scheduled run covers
+    defaults = load_defaults().metrics  # the default set; real runs use the settings saved in the sheet
     parser = argparse.ArgumentParser(description="Show what a run would pull. Writes nothing.")
     parser.add_argument("--start", type=date.fromisoformat, default=first)
     parser.add_argument("--end", type=date.fromisoformat, default=last)
+    parser.add_argument("--ga4-metrics", nargs="+", default=list(defaults.ga4), help="GA4 metric names to try")
+    parser.add_argument("--search-console-metrics", nargs="+", default=list(defaults.search_console))
     args = parser.parse_args(argv)
-    metrics = load_defaults().metrics  # the placeholder set; real runs use the saved settings
 
     for title, fetch, chosen in (
-        ("GA4", fetch_ga4, metrics.ga4),
-        ("Search Console", fetch_search_console, metrics.search_console),
+        ("GA4", fetch_ga4, args.ga4_metrics),
+        ("Search Console", fetch_search_console, args.search_console_metrics),
     ):
         try:
-            _print(title, fetch(args.start, args.end, list(chosen)), list(chosen))
+            _print(title, fetch(args.start, args.end, chosen), chosen)
         except Exception as error:  # noqa: BLE001
-            print(f"\n{title}: couldn't pull. {explain_error(error, title)}")
+            if status_code(error) == 400:
+                # Usually a metric name Google doesn't recognise, when trying a new one.
+                reason = f"Google didn't accept the request. Check {', '.join(chosen)} are real {title} metric names."
+            else:
+                reason = explain_error(error, title)
+            print(f"\n{title}: couldn't pull. {reason}")
 
 
 if __name__ == "__main__":

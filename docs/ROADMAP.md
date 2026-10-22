@@ -35,7 +35,7 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
 | 6 | Alerts | `feat/alerts` | 🔄 checks merged (PR #13), Marisol's settings in; Slack sender next |
 | 7 | Deployment | `feat/deploy` | ⏸️ billing approved ($5 cap); cap setup awaits the user's OK |
-| 8 | Claude Code skills for the owner | `feat/owner-skills` | ⬜ |
+| 8 | Claude Code skills for the owner | `feat/owner-skills` | 🔄 PR open |
 | 9 | Owner's guide | `docs/owners-guide` | ⬜ |
 
 ---
@@ -202,15 +202,22 @@ Each morning, after the data is written, compare each count metric's latest 7 da
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 
-## 8. Claude Code skills for the owner ⬜
+## 8. Claude Code skills for the owner 🔄
 
 Plain-English slash commands in `.claude/skills/`:
 - **`/health-check`**: is everything working? Last run, next run, access to Google, placeholder warnings.
 - **`/rerun`**: re-pull a date range, with the same date rules as the panel.
 - **`/add-metric`**: add a metric to the pipeline safely, on a branch with tests and a PR.
 
-**Done when:** each skill has been tried end-to-end. Any step that writes to the
-real sheet is confirmed with a person first.
+- [x] `/health-check` runs `python -m scripts.health_check`, a read-only checklist (read-only Google
+  permissions, never posts to Slack) that Claude explains in plain English. Tried against the real
+  setup: it correctly flagged the old placeholder settings and the missing Slack link.
+- [x] `/rerun` checks the dates with the pipeline's own rules, confirms the exact days with the owner,
+  then runs `pipeline.runner`. Only when typed, never automatically.
+- [x] `/add-metric`: if the metric is already supported, it points to the Settings page. Otherwise
+  it checks the name with Google (read-only preview) and adds it on a branch with tests and a PR.
+  Only when typed.
+- [ ] Each skill tried end-to-end by the owner. A real `/rerun` writes to the sheet, so it needs her OK.
 
 ## 9. Owner's guide ⬜
 
