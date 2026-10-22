@@ -1,31 +1,27 @@
-# Default control panel settings.
+# Default control panel settings: Marisol's choices (docs/decisions.md, decision 25).
 #
 # These are copied into the master sheet's _settings tab the first time the
-# pipeline runs. After that, the sheet is the source of truth: change settings
-# in the control panel, not in this file.
+# pipeline runs on a new sheet. After that, the sheet is the source of truth:
+# change settings in the control panel, not in this file.
 #
-# ---------------------------------------------------------------------------
-# TBD: metrics, alert thresholds and alert recipients are PLACEHOLDERS.
-# They are waiting on Marisol (docs/decisions.md, decision 17).
-# While a section is listed under [tbd] below and still matches these values,
-# the control panel shows a warning that it hasn't been set yet.
-# When the real values are confirmed, put them here and remove the section
-# from the [tbd] list.
-# ---------------------------------------------------------------------------
+# If a value here is ever a stand-in waiting on a decision, list its section
+# under [tbd]. While it still matches this file, the control panel warns that
+# it hasn't been set yet, and alerts stay off.
 
-# TBD placeholder. example.com is a reserved domain, so nothing can actually be
-# delivered to this address.
-alert_recipients = ["alerts-tbd@example.com"]
+# Alerts go to a Slack channel (decision 26), so no email addresses are needed.
+# The email sender is kept but unused; this list is only for it.
+alert_recipients = []
 
 [tbd]
-sections = ["metrics", "alert_thresholds", "alert_recipients"]
+sections = []
 
-# TBD placeholder: a general starting set, not a confirmed choice.
 [metrics]
 ga4 = ["sessions", "totalUsers"]
 search_console = ["clicks", "impressions"]
 
-# TBD placeholder: alert when a metric drops by at least this many percent.
+# Alert when a metric's latest 7 days are down this much on the 7 days before.
 [alert_thresholds]
-sessions = { drop_pct = 30 }
-clicks = { drop_pct = 30 }
+sessions = { drop_pct = 25 }
+totalUsers = { drop_pct = 25 }
+clicks = { drop_pct = 25 }
+impressions = { drop_pct = 25 }

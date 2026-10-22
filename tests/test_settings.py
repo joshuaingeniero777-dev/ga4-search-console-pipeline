@@ -3,6 +3,7 @@
 import pytest
 
 from pipeline.settings import (
+    OLD_PLACEHOLDERS,
     SettingsInvalid,
     load_defaults,
     metric_options,
@@ -32,22 +33,44 @@ def test_defaults_file_is_valid():
     assert defaults.metrics.ga4 and defaults.metrics.search_console
 
 
-def test_defaults_are_flagged_as_tbd():
-    warnings = placeholder_warnings(load_defaults())
-    assert len(warnings) == 3
-    assert any("Alert recipients" in warning for warning in warnings)
+def test_defaults_are_marisols_choices():
+    defaults = load_defaults()
+    assert (defaults.metrics.ga4, defaults.metrics.search_console) == (["sessions", "totalUsers"], ["clicks", "impressions"])
+    assert {m: t.drop_pct for m, t in defaults.alert_thresholds.items()} == {
+        "sessions": 25, "totalUsers": 25, "clicks": 25, "impressions": 25,
+    }
+    assert defaults.alert_recipients == []  # alerts go to Slack
+    assert placeholder_warnings(defaults) == []
 
 
-def test_tbd_warning_clears_once_a_section_is_changed():
-    settings = load_defaults().model_copy(update={"alert_recipients": ["owner@joinswc.org"]})
-    warnings = placeholder_warnings(settings)
-    assert not any("Alert recipients" in warning for warning in warnings)
-    assert len(warnings) == 2
+TBD_FILE = '''
+alert_recipients = []
+[tbd]
+sections = ["alert_thresholds"]
+[metrics]
+ga4 = ["sessions"]
+search_console = ["clicks"]
+[alert_thresholds]
+sessions = { drop_pct = 50 }
+'''
 
 
-def test_placeholder_recipient_cannot_receive_mail():
-    # example.com is reserved, so a forgotten placeholder can't email a stranger.
-    assert all(address.endswith("@example.com") for address in load_defaults().alert_recipients)
+def test_a_section_marked_tbd_is_flagged_until_changed(tmp_path):
+    defaults_file = tmp_path / "defaults.toml"
+    defaults_file.write_text(TBD_FILE, encoding="utf-8")
+    stand_in = load_defaults(defaults_file)
+
+    assert placeholder_warnings(stand_in, defaults_file) == [
+        "Alert thresholds still use the placeholder defaults and need to be set."
+    ]
+    changed = stand_in.model_copy(update={"alert_thresholds": {}})
+    assert placeholder_warnings(changed, defaults_file) == []
+
+
+def test_settings_saved_with_the_old_placeholders_are_still_flagged():
+    # Saved before Marisol's choices: the reserved example.com address gives them away.
+    old = parse_settings(valid(alert_recipients=["alerts-tbd@example.com"]))
+    assert placeholder_warnings(old) == [OLD_PLACEHOLDERS]
 
 
 def test_valid_settings_pass_and_emails_are_normalised():
@@ -64,7 +87,7 @@ def test_duplicate_recipients_rejected_case_insensitively():
 
 
 def test_recipient_count_limits():
-    assert "Alert recipients" in problem(alert_recipients=[])
+    assert parse_settings(valid(alert_recipients=[])).alert_recipients == []  # fine: alerts go to Slack
     assert "Alert recipients" in problem(alert_recipients=[f"p{n}@joinswc.org" for n in range(11)])
 
 

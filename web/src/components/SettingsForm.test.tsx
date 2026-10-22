@@ -19,8 +19,9 @@ describe("Settings page", () => {
     expect(checkbox("Total users").checked).toBe(false);
     expect(checkbox("Clicks").checked).toBe(true);
     expect((screen.getByLabelText("Sessions alert threshold (%)") as HTMLInputElement).value).toBe("30");
-    expect((screen.getByLabelText(/Email address/) as HTMLInputElement).value).toBe("owner@joinswc.org");
     expect(screen.getByText(/Last changed by owner@joinswc.org on/)).toBeTruthy();
+    expect(screen.getByText(/Alerts are posted to the pipeline's Slack channel/)).toBeTruthy();
+    expect(screen.queryByLabelText(/Email address/)).toBeNull();
   });
 
   it("saves changes with the version it loaded", async () => {
@@ -32,8 +33,6 @@ describe("Settings page", () => {
 
     await userEvent.click(checkbox("Impressions"));
     await userEvent.type(screen.getByLabelText("Impressions alert threshold (%)"), "40");
-    await userEvent.click(screen.getByRole("button", { name: "Add another person" }));
-    await userEvent.type(screen.getByLabelText("Email address 2"), "marisol@starrwellnesscollective.org");
     await userEvent.click(screen.getByRole("button", { name: "Save settings" }));
 
     expect((await screen.findByRole("status")).textContent).toContain("Saved.");
@@ -42,7 +41,7 @@ describe("Settings page", () => {
       settings: {
         metrics: { ga4: ["sessions"], search_console: ["clicks", "impressions"] },
         alert_thresholds: { sessions: { drop_pct: 30 }, impressions: { drop_pct: 40 } },
-        alert_recipients: ["owner@joinswc.org", "marisol@starrwellnesscollective.org"],
+        alert_recipients: [], // alerts go to Slack; saving clears any old email list
       },
     });
   });
@@ -55,13 +54,10 @@ describe("Settings page", () => {
     await userEvent.click(checkbox("Clicks")); // nothing left from Search Console
     await userEvent.clear(screen.getByLabelText("Sessions alert threshold (%)"));
     await userEvent.type(screen.getByLabelText("Sessions alert threshold (%)"), "150");
-    await userEvent.clear(screen.getByLabelText(/Email address/));
-    await userEvent.type(screen.getByLabelText(/Email address/), "bob@");
     await userEvent.click(screen.getByRole("button", { name: "Save settings" }));
 
     expect(screen.getByText("Choose at least one.")).toBeTruthy();
     expect(screen.getByText(/Enter a whole number from 1 to 100/)).toBeTruthy();
-    expect(screen.getByText("This isn't a valid email address.")).toBeTruthy();
     expect(screen.getByLabelText("Sessions alert threshold (%)").getAttribute("aria-invalid")).toBe("true");
     expect(fetchMock).toHaveBeenCalledTimes(1); // only the initial load
   });
@@ -82,10 +78,10 @@ describe("Settings page", () => {
   });
 
   it("explains broken saved settings and still lets them be fixed", async () => {
-    fakeApi(() => json(200, someSettings({ settings: null, problem: "Alert recipients: 'bob@' isn't a valid email address." })));
+    fakeApi(() => json(200, someSettings({ settings: null, problem: "Alert thresholds > sessions > drop %: Input should be less than or equal to 100" })));
     render(<SettingsForm />);
 
-    expect((await screen.findByRole("alert")).textContent).toContain("'bob@' isn't a valid email address.");
+    expect((await screen.findByRole("alert")).textContent).toContain("Input should be less than or equal to 100");
     expect(checkbox("Sessions").checked).toBe(false);
     expect(screen.getByRole("button", { name: "Save settings" })).toBeTruthy();
   });
@@ -112,15 +108,8 @@ describe("settings rules", () => {
     expect(check({ ...form, thresholds: { sessions: "2.5" } }, OPTIONS).thresholds.sessions).toBeTruthy();
   });
 
-  it("spots duplicate and too many recipients", () => {
-    expect(check({ ...form, recipients: ["a@joinswc.org", "A@joinswc.org"] }, OPTIONS).recipients[1]).toBe(
-      "This address is listed twice.",
-    );
-    const many = ["a@x.org", "b@x.org", "c@x.org", "d@x.org"];
-    expect(check({ ...form, recipients: many }, OPTIONS).recipientsOverall).toBe("Up to 3 people.");
-    expect(check({ ...form, recipients: [""] }, OPTIONS).recipientsOverall).toBe(
-      "Add at least one person to receive alerts.",
-    );
+  it("saving clears any email list left from the old placeholders", () => {
+    expect(toSettings(form, OPTIONS).alert_recipients).toEqual([]);
   });
 });
 
