@@ -2,8 +2,11 @@
 
 This is what the Cloud Run Job executes, both on schedule and for "Run now":
 
-    python -m pipeline.runner                                  # last 7 days
-    python -m pipeline.runner --start 2026-01-01 --end 2026-01-31 --trigger manual --triggered-by someone@joinswc.org
+    python -m pipeline.runner --trigger scheduled --triggered-by scheduler    # what the cloud scheduler runs
+    python -m pipeline.runner --start 2026-01-01 --end 2026-01-31 --triggered-by someone@joinswc.org
+
+A run counts as "manual" unless the scheduler explicitly says --trigger scheduled,
+so a run started by hand is never mistaken for the daily schedule.
 
 The real step is pipeline.pull.pull_and_load: GA4 and Search Console into the
 sheet. `not_built_yet` is a stand-in that writes nothing; the tests and the
@@ -24,6 +27,7 @@ from pipeline.store import Run, Store
 
 log = logging.getLogger(__name__)
 
+UNNAMED = "a command (no name given)"  # shown as "started by …" when nobody is named
 DEFAULT_DAYS = 7  # rolling window, because Search Console revises recent days (decision 3)
 MAX_RANGE_DAYS = 366  # decision 16
 SEARCH_CONSOLE_HISTORY_MONTHS = 16  # Google keeps no Search Console data older than this
@@ -100,8 +104,8 @@ def run(
     start: date | None = None,
     end: date | None = None,
     *,
-    trigger: str = "scheduled",
-    triggered_by: str = "scheduler",
+    trigger: str = "manual",
+    triggered_by: str = UNNAMED,
     store: Store | None = None,
     steps: Steps | None = None,
     today: date | None = None,
@@ -140,8 +144,9 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Run the pipeline once.")
     parser.add_argument("--start", type=date.fromisoformat, help="first day, YYYY-MM-DD")
     parser.add_argument("--end", type=date.fromisoformat, help="last day, YYYY-MM-DD")
-    parser.add_argument("--trigger", choices=["scheduled", "manual"], default="scheduled")
-    parser.add_argument("--triggered-by", default="scheduler")
+    parser.add_argument("--trigger", choices=["scheduled", "manual"], default="manual",
+                        help="only the cloud scheduler passes 'scheduled'")
+    parser.add_argument("--triggered-by", default=UNNAMED, help="who started it, e.g. an email address")
     parser.add_argument("--run-id", help="a run already recorded in the run history")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)

@@ -132,3 +132,24 @@ def test_command_line_failure_is_plain_and_exits_nonzero(store, monkeypatch, cap
 
     assert exit_.value.code == 1
     assert "The run didn't start. Please give both" in capsys.readouterr().out
+
+
+# --- who started a run ---------------------------------------------------------
+
+def test_runs_are_manual_unless_the_scheduler_says_so(store):
+    finished = runner.run(store=store, today=TODAY, steps=runner.not_built_yet)
+    assert (finished.trigger, finished.triggered_by) == ("manual", runner.UNNAMED)
+
+
+def test_command_line_defaults_to_manual_and_scheduler_must_say_so(store, monkeypatch):
+    monkeypatch.setattr(runner.Store, "open", classmethod(lambda cls: store))
+    monkeypatch.setattr(pull, "pull_and_load", runner.not_built_yet)
+
+    runner.main([])
+    runner.main(["--trigger", "scheduled", "--triggered-by", "scheduler"])
+
+    newest_first = store.list_runs()
+    assert [(r.trigger, r.triggered_by) for r in newest_first] == [
+        ("scheduled", "scheduler"),
+        ("manual", runner.UNNAMED),
+    ]
