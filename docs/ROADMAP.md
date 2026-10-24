@@ -164,16 +164,17 @@ metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
 ## 6. Alerts 🔄
 
 Each morning, after the data is written, compare each count metric's latest 7 days with the
-7 days before (decisions 21–24), and email the alert recipients about drops past their level.
+7 days before (decisions 21–24), and post an alert to the pipeline's Slack channel about drops
+past their level (decision 26).
 
 - [x] `pipeline/alerts.py`:
   - Weekly totals ending on each source's newest reported day.
   - Minimum earlier-week total of 20; counts only.
   - The same metric at most once per 7 days, with sent alerts logged in a locked `_alerts` tab.
-  - A plain-English email.
+  - A plain-English message.
 - [x] **Off automatically** while any setting is still a TBD placeholder, or while no sender is
   set up. The run's message says what *would* have been flagged.
-- [x] An email that fails to send marks the run failed with the reason, and isn't logged as sent,
+- [x] An alert that fails to send marks the run failed with the reason, and isn't logged as sent,
   so the next run tries again.
 - [x] Settings page: explains the weekly comparison, and says "Not used yet" next to alert levels
   on rates.
@@ -183,12 +184,17 @@ Each morning, after the data is written, compare each count metric's latest 7 da
   - The Settings page says alerts go to the pipeline's Slack channel, instead of showing an email list.
   - Settings saved before her choices (they contain an `@example.com` address) are still flagged as
     placeholders, so alerts stay off until someone saves Marisol's settings.
-- [ ] **Superseded by Slack:** how emails are sent. Domain-wide delegation can't be limited to one mailbox (see
-  the PR for item 6's sender).
-- [ ] **Will ask before:** sending any real alert, and before merging the sender (real email).
-- **Needs Marisol:** real metrics, thresholds and recipients, and whether
-  recipients must be on the business's own domains. That would block alerts going
-  to outside addresses; a security review suggested it, but it's a business rule.
+- [x] `pipeline/slack.py` posts alerts through a Slack incoming webhook (`SLACK_WEBHOOK_URL`, a secret).
+  - The link never appears in error messages or logs.
+  - Only `https://hooks.slack.com/...` links are accepted.
+  - A removed link or channel is explained in plain English.
+- [x] An email sender (`pipeline/mail.py`, with a one-time mailbox sign-in) is kept but unused (decision 28).
+- [ ] PR #14 merged (needs the user's OK: it posts real messages and uses a secret).
+- [ ] **Needs a person:** the live `_settings` tab still holds the old placeholders. Save Marisol's
+  settings in the panel, or let Claude do it with your OK.
+- [ ] **Needs a person:** make the Slack link and put it in `.env` (steps in the PR #14 summary and the
+  owner's guide).
+- [ ] **Will ask before:** posting a real test alert.
 
 ## 7. Deployment ⏸️
 

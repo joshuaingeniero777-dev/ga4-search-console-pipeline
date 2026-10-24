@@ -33,6 +33,7 @@ made without stakeholder input and is open to correction.
 | 25 | Metrics: GA4 sessions and total users; Search Console clicks and impressions. Alert level: 25% week-over-week drop for all four | Marisol's choice | Yes — Marisol, 2026-10-22 |
 | 26 | Alerts go to a Slack channel Marisol is in, through a Slack incoming webhook (a secret, kept in `.env` / the host's secret settings). The channel is set by the webhook, so the control panel says so instead of offering a recipients list. Any email sender is kept in the code but unused | Marisol's choice | Yes — Marisol, 2026-10-22 |
 | 27 | joinswc.org and starrwellnesscollective.org are in the same Google Workspace, so the sign-in app can be "Internal" (only that Workspace's accounts can reach it) | Confirmed by the user | Yes — 2026-10-22 |
+| 28 | An email sender is kept in the code but **unused** (`pipeline/mail.py`). It sends as one dedicated alerts mailbox that signed in once and allowed only "send email". If email is ever wanted, use it rather than domain-wide delegation, which can't be limited to one mailbox (a leaked key could send as anyone on the domain). It would be a narrow exception to decision 1 | Marisol chose Slack (decision 26); the user asked to keep the email code | Yes — 2026-10-22 |
 
 ## Open questions
 

@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from pipeline import alerts, load
+from pipeline import alerts, load, slack
 from pipeline.pull import pull_and_load
 from pipeline.settings import parse_settings
 from pipeline.store import ALERTS_TAB
@@ -34,6 +34,11 @@ def table(metric, earlier_daily, recent_daily, newest=NEWEST):
 
 
 class FakeSender:
+    service = "Slack"
+
+    def where(self, recipients):
+        return "to the Slack channel"
+
     def __init__(self, fail=False):
         self.sent = []
         self.fail = fail
@@ -106,7 +111,7 @@ def test_sends_one_email_and_logs_it(store, spreadsheet, dropping):
 
     outcome = alerts.check(settings(), store, NOW, lambda: sender)
 
-    assert outcome == alerts.Outcome("Alert emailed to 2 people: Sessions down 40%.")
+    assert outcome == alerts.Outcome("Alert sent to the Slack channel: Sessions down 40%.")
     [(to, subject, body)] = sender.sent
     assert to == REAL_RECIPIENTS
     assert subject == "Website numbers dropped: Sessions down 40%"
@@ -123,7 +128,7 @@ def test_same_metric_not_emailed_again_within_7_days(store, dropping):
     outcome = alerts.check(settings(), store, NOW + timedelta(days=6), lambda: sender)
 
     assert len(sender.sent) == 1
-    assert outcome.message == "Alerts: still down (Sessions down 40%), already emailed in the last 7 days."
+    assert outcome.message == "Alerts: still down (Sessions down 40%), already sent in the last 7 days."
 
 
 def test_emailed_again_after_7_days_if_still_down(store, dropping):
@@ -144,15 +149,15 @@ def test_off_while_settings_are_placeholders(store, dropping):
 
 
 def test_off_while_no_sender_is_set_up(store, dropping):
-    outcome = alerts.check(settings(), store, NOW, alerts.no_sender)
-    assert outcome.message.startswith("Alerts are off because no sending mailbox is set up yet")
+    outcome = alerts.check(settings(), store, NOW, lambda: None)
+    assert outcome.message.startswith("Alerts are off because the Slack link isn't set up yet")
 
 
 def test_failed_email_is_reported_and_not_logged_as_sent(store, spreadsheet, dropping):
     outcome = alerts.check(settings(), store, NOW, lambda: FakeSender(fail=True))
 
     assert not outcome.ok
-    assert outcome.message.startswith("The alert email couldn't be sent.")
+    assert outcome.message.startswith("The alert couldn't be sent.")
     assert ALERTS_TAB not in spreadsheet.worksheets  # so the next run tries again
 
 
@@ -171,10 +176,12 @@ def test_run_continues_and_fails_clearly_if_the_email_cannot_be_sent(store, spre
         sender_for=lambda: FakeSender(fail=True), now=NOW,
     )
     assert not result.ok
-    assert result.message.startswith("The alert email couldn't be sent.")
+    assert result.message.startswith("The alert couldn't be sent.")
     assert "GA4: 0 days updated." in result.message
 
 
-def test_real_run_step_sends_nothing_until_a_sender_is_chosen(store, dropping):
+def test_real_run_step_sends_nothing_until_the_mailbox_is_set_up(store, dropping, monkeypatch):
+    monkeypatch.setattr(slack, "load_dotenv", lambda: None)
+    monkeypatch.delenv(slack.WEBHOOK_ENV, raising=False)
     result = pull_and_load(NEWEST, NEWEST, settings(), store, ga4=lambda *_: {}, search_console=lambda *_: {}, now=NOW)
-    assert result.ok and "no sending mailbox is set up yet" in result.message
+    assert result.ok and "the Slack link isn't set up yet" in result.message

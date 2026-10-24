@@ -10,7 +10,8 @@ pandas==3.0.5                      # note: 3.x, not 2.x — see docs/decisions.m
 pydantic==2.14.1                   # validates control panel settings (shared with the API)
 
 # Alerting
-requests==2.34.2                   # posting to a Slack webhook
+requests==2.34.2                   # posts alerts to Slack; also used by the setup scripts
+google-auth-oauthlib==1.4.1        # one-time sign-in for the unused email sender (already installed with gspread)
 
 # Control panel API
 fastapi==0.156.5                   # web framework for api/ (built on pydantic)
