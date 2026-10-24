@@ -34,10 +34,12 @@ made without stakeholder input and is open to correction.
 | 26 | Alerts go to a Slack channel Marisol is in, through a Slack incoming webhook (a secret, kept in `.env` / the host's secret settings). The channel is set by the webhook, so the control panel says so instead of offering a recipients list. Any email sender is kept in the code but unused | Marisol's choice | Yes — Marisol, 2026-10-22 |
 | 27 | joinswc.org and starrwellnesscollective.org are in the same Google Workspace, so the sign-in app can be "Internal" (only that Workspace's accounts can reach it) | Confirmed by the user | Yes — 2026-10-22 |
 | 28 | An email sender is kept in the code but **unused** (`pipeline/mail.py`). It sends as one dedicated alerts mailbox that signed in once and allowed only "send email". If email is ever wanted, use it rather than domain-wide delegation, which can't be limited to one mailbox (a leaked key could send as anyone on the domain). It would be a narrow exception to decision 1 | Marisol chose Slack (decision 26); the user asked to keep the email code | Yes — 2026-10-22 |
+| 29 | A day a source has no record for is left **blank**, never written as 0. Only the newest days count as "not reported yet" | GA4 has no record for 25 days between Jul 27 and Aug 28, 2026, yet Search Console shows clicks to the site on 12 of them, so GA4 most likely wasn't recording. Zeros would understate real traffic | Yes — the user, 2026-10-24 |
 
 ## Open questions
 
 - **Billing cap setup (decision 9):** proposed to the user 2026-10-22; not built until approved. Deployment (roadmap item 7) waits on it.
+- **GA4 recording gap, Jul 27 – Aug 28, 2026:** GA4 has no record for 25 of those days, but Search Console shows visitors arriving on 12 of them. Check the site's GA4 tracking code history for that period (decision 29).
 - Who maintains this after handover? Nobody has been named yet.
 - Should the repo move to a company GitHub organization? Currently personal.
 - Who else should have Owner access on the Cloud project, so it isn't only me?

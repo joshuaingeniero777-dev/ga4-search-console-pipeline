@@ -162,7 +162,7 @@ def test_both_tabs_written_one_row_per_day(store, spreadsheet):
     assert result.ok and result.rows_written == 12
     assert result.message == (
         "GA4: 7 days updated. "
-        "Search Console: 5 days updated. Google hadn't reported the other 2 days yet; later runs fill them in. "
+        "Search Console: 5 days updated. Google hasn't reported the newest 2 days yet; later runs fill them in. "
         "Alerts: no numbers dropped past their alert level."
     )
     ga4_tab = spreadsheet.worksheets[load.GA4_TAB]
@@ -220,3 +220,28 @@ def test_runner_records_a_partly_failed_run_as_failed(store):
     assert finished.status == "failed" and finished.rows_written == 7
     assert "GSC_SITE_URL is missing" in finished.message
     assert RUNS_TAB in store._spreadsheet.worksheets
+
+
+# --- explaining missing days --------------------------------------------------------
+
+def test_days_with_no_record_are_named_and_left_blank(store, spreadsheet):
+    # GA4 has the 14th and the 17th, nothing for the 15th-16th (not recording), and the
+    # 18th-20th aren't reported yet.
+    result = pull_and_load(
+        START, END, settings(ga4=("sessions",)), store,
+        ga4=lambda *_: {"2026-10-14": {"sessions": 3}, "2026-10-17": {"sessions": 4}},
+        search_console=lambda *_: {}, sender_for=lambda: None, now=NOW,
+    )
+
+    assert result.message.startswith(
+        "GA4: 2 days updated. 2 days had no GA4 record and stay blank. "
+        "Google hasn't reported the newest 3 days yet; later runs fill them in."
+    )
+    days = [row[0] for row in spreadsheet.worksheets[load.GA4_TAB].rows[1:]]
+    assert days == ["2026-10-14", "2026-10-17"]  # nothing invented for the 15th and 16th
+
+
+def test_nothing_at_all_from_a_source_is_said_plainly(store):
+    result = pull_and_load(START, END, settings(), store, ga4=lambda *_: {}, search_console=lambda *_: {},
+                           sender_for=lambda: None, now=NOW)
+    assert result.message.startswith("GA4: 0 days updated. Google had nothing for these days.")
