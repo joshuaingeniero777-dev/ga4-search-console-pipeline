@@ -17,6 +17,7 @@ ga4-search-console-pipeline/
 ├─ api/              FastAPI backend. The only thing that talks to Google APIs and the pipeline.
 ├─ web/              Next.js control panel. Talks ONLY to the FastAPI backend, never to Google directly.
 ├─ config/           settings.example.toml (template, safe to commit)
+├─ infra/            cloud setup pieces, e.g. billing_cap/ (the $5 billing cap; see its README)
 ├─ tests/            pytest tests for pipeline and api
 └─ docs/             scoping notes, decision log, owner's guide
 ```

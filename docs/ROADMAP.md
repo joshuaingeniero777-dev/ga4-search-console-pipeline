@@ -33,8 +33,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
-| 6 | Alerts | `feat/alerts` | ⏳ built (PRs #13, #14), live settings updated; waiting on the Slack link |
-| 7 | Deployment | `feat/deploy` | ⏸️ billing cap approved and being built; Marisol to set up a billing account first |
+| 6 | Alerts | `feat/alerts` | ✅ built (PRs #13, #14); Slack connected and tested |
+| 7 | Deployment | `feat/deploy` | ⏸️ billing cap built (not deployed); Marisol to set up a billing account first |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ✅ PR #16; owner to try them |
 | 9 | Owner's guide | `docs/owners-guide` | ✅ `docs/owners-guide.md`; contacts to fill at handover |
 
@@ -161,7 +161,7 @@ metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
   both GA4 and Search Console.
 - **Will ask before:** the first real write of data to the master sheet.
 
-## 6. Alerts 🔄
+## 6. Alerts ✅
 
 Each morning, after the data is written, compare each count metric's latest 7 days with the
 7 days before (decisions 21–24), and post an alert to the pipeline's Slack channel about drops
@@ -192,9 +192,11 @@ past their level (decision 26).
 - [x] PR #14 merged by the user (2026-10-24).
 - [x] Live `_settings` tab updated to Marisol's values, with the user's OK (2026-10-24). No placeholder
   warnings left.
-- [ ] **Needs a person:** make the Slack link and put it in `.env` as `SLACK_WEBHOOK_URL` (steps in the
-  owner's guide).
-- [ ] One test message to the channel. The user sees the exact text first and OKs it.
+- [x] Slack link added to `.env` as `SLACK_WEBHOOK_URL` by the user (2026-10-24).
+- [x] One test message posted to the channel, with the user's OK after seeing the exact text; Slack
+  answered "ok" (2026-10-24).
+- Real alerts start once the pipeline runs every morning in the cloud (item 7), and once there are
+  14 days of data to compare.
 
 ## 7. Deployment ⏸️
 
@@ -206,8 +208,12 @@ past their level (decision 26).
 - **Billing:** Marisol approved it with a $5/month maximum (decision 9). The user approved the cap as
   proposed: a budget that warns at $3 and a small function that switches billing off at $5.
   **Build it, but don't turn on billing or deploy anything yet.**
+- [x] Billing cap built in `infra/billing_cap/`, **not deployed**. A function switches billing off when
+  the month's cost reaches $5. It starts in dry run (only logs); setup steps are in its README.
 - **Needs Marisol first:** create a Google Cloud billing account with a payment method, and give the
-  user access to link it to the project (steps sent to her 2026-10-24).
+  user *Billing Account User* and *Billing Account Costs Manager* (steps sent to her 2026-10-24).
+- [ ] With the user's OK: link billing, create the $5 budget, deploy the cap in dry run, test it, then
+  arm it (`infra/billing_cap/README.md`).
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 
