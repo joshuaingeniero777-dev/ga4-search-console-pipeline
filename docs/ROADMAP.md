@@ -34,7 +34,7 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
 | 6 | Alerts | `feat/alerts` | ⏳ built (PRs #13, #14), live settings updated; waiting on the Slack link |
-| 7 | Deployment | `feat/deploy` | ⏸️ billing cap approved and being built; Marisol to set up a billing account first |
+| 7 | Deployment | `feat/deploy` | ⏸️ billing cap built (not deployed); Marisol to set up a billing account first |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ✅ PR #16; owner to try them |
 | 9 | Owner's guide | `docs/owners-guide` | ✅ `docs/owners-guide.md`; contacts to fill at handover |
 
@@ -206,8 +206,12 @@ past their level (decision 26).
 - **Billing:** Marisol approved it with a $5/month maximum (decision 9). The user approved the cap as
   proposed: a budget that warns at $3 and a small function that switches billing off at $5.
   **Build it, but don't turn on billing or deploy anything yet.**
+- [x] Billing cap built in `infra/billing_cap/`, **not deployed**. A function switches billing off when
+  the month's cost reaches $5. It starts in dry run (only logs); setup steps are in its README.
 - **Needs Marisol first:** create a Google Cloud billing account with a payment method, and give the
-  user access to link it to the project (steps sent to her 2026-10-24).
+  user *Billing Account User* and *Billing Account Costs Manager* (steps sent to her 2026-10-24).
+- [ ] With the user's OK: link billing, create the $5 budget, deploy the cap in dry run, test it, then
+  arm it (`infra/billing_cap/README.md`).
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 

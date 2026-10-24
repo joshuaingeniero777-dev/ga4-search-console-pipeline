@@ -1,0 +1,4 @@
+# Installed by Google Cloud when the billing cap is deployed; not part of the pipeline itself.
+functions-framework==3.10.2        # what Google uses to run a Python function
+google-api-python-client==2.199.0  # Cloud Billing API (same version as the pipeline)
+google-auth==2.57.0                # the function's own Google identity (same version as the pipeline)
