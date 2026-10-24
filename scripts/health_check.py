@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from google.auth.transport.requests import Request
 
 from api.auth import missing_settings
-from pipeline import extract, schedule
+from pipeline import extract, schedule, slack
 from pipeline.errors import PipelineError, explain_error
 from pipeline.google_auth import READONLY_SCOPES, credentials
 from pipeline.load import GA4_TAB, SEARCH_CONSOLE_TAB
@@ -103,8 +103,7 @@ def check_sources(fetchers: dict[str, Callable] | None = None) -> list[Check]:
 
 def check_setup() -> list[Check]:
     load_dotenv()
-    # The same rule as pipeline/slack.py: only a real Slack link counts. Never posted to here.
-    slack_ok = os.environ.get("SLACK_WEBHOOK_URL", "").strip().startswith("https://hooks.slack.com/")
+    slack_ok = slack.configured_sender() is not None  # only checks the link is there; never posts
     sign_in_missing = missing_settings()
     return [
         Check("Slack alerts", slack_ok, "The Slack link is set up." if slack_ok

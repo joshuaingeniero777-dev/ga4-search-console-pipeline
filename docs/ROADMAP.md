@@ -33,8 +33,8 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
-| 6 | Alerts | `feat/alerts` | 🔄 checks merged (PR #13), Marisol's settings in; Slack sender next |
-| 7 | Deployment | `feat/deploy` | ⏸️ billing approved ($5 cap); cap setup awaits the user's OK |
+| 6 | Alerts | `feat/alerts` | ⏳ built (PRs #13, #14), live settings updated; waiting on the Slack link |
+| 7 | Deployment | `feat/deploy` | ⏸️ billing cap approved and being built; Marisol to set up a billing account first |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ✅ PR #16; owner to try them |
 | 9 | Owner's guide | `docs/owners-guide` | ✅ `docs/owners-guide.md`; contacts to fill at handover |
 
@@ -189,12 +189,12 @@ past their level (decision 26).
   - Only `https://hooks.slack.com/...` links are accepted.
   - A removed link or channel is explained in plain English.
 - [x] An email sender (`pipeline/mail.py`, with a one-time mailbox sign-in) is kept but unused (decision 28).
-- [ ] PR #14 merged (needs the user's OK: it posts real messages and uses a secret).
-- [ ] **Needs a person:** the live `_settings` tab still holds the old placeholders. Save Marisol's
-  settings in the panel, or let Claude do it with your OK.
-- [ ] **Needs a person:** make the Slack link and put it in `.env` (steps in the PR #14 summary and the
+- [x] PR #14 merged by the user (2026-10-24).
+- [x] Live `_settings` tab updated to Marisol's values, with the user's OK (2026-10-24). No placeholder
+  warnings left.
+- [ ] **Needs a person:** make the Slack link and put it in `.env` as `SLACK_WEBHOOK_URL` (steps in the
   owner's guide).
-- [ ] **Will ask before:** posting a real test alert.
+- [ ] One test message to the channel. The user sees the exact text first and OKs it.
 
 ## 7. Deployment ⏸️
 
@@ -203,8 +203,11 @@ past their level (decision 26).
 - API on **Cloud Run**; control panel on **Vercel** (decision 18).
 - "Run now" in the cloud starts the Cloud Run Job.
 - Secrets live in each host's secret settings, never in the repo.
-- **Billing:** Marisol approved it with a $5/month maximum (decision 9). A cap that warns at $3 and
-  switches billing off at $5 has been proposed; **don't build it until the user approves.**
+- **Billing:** Marisol approved it with a $5/month maximum (decision 9). The user approved the cap as
+  proposed: a budget that warns at $3 and a small function that switches billing off at $5.
+  **Build it, but don't turn on billing or deploy anything yet.**
+- **Needs Marisol first:** create a Google Cloud billing account with a payment method, and give the
+  user access to link it to the project (steps sent to her 2026-10-24).
 - **Needs a person:** a Vercel account, the billing decision, Cloud Console setup.
 - **Will ask before:** every deploy.
 
@@ -234,12 +237,15 @@ Plain-English slash commands in `.claude/skills/`:
 - how to change settings, re-collect days, add a number, or change the Slack channel;
 - where things are, costs and the $5 cap, and who to ask.
 
-- [ ] **At handover:** fill in the "Who to ask" names and contacts.
+- [ ] **At handover:** fill in the "Who to ask" contacts in `docs/owners-guide.md`: the developer or
+  support person, and the Workspace administrator. They're placeholders until then, on purpose.
 - [ ] Update it when the cloud run and Slack alerts are live (it currently says they're being finished).
 
 ---
 
 ## Housekeeping
+
+- **At handover:** the "Who to ask" contacts in `docs/owners-guide.md` get filled in (item 9).
 
 - `chore/claude-plugins` (shared Claude Code plugin settings) is committed locally
   but was never pushed. Decide whether to push it and open a PR.
