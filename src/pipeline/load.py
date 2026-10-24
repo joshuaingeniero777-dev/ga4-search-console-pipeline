@@ -45,6 +45,8 @@ def merge(existing: list[list], fresh: dict[str, dict], metrics: list[str], tab:
         rows[day] = cells
 
     for day, values in fresh.items():
+        if day in rows and all(value == "" for value in values.values()):
+            continue  # a blank "no record" row never wipes numbers the sheet already has
         rows[day] = {**rows.get(day, {}), **values, DATE_COLUMN: day, UPDATED_COLUMN: updated_at}
 
     return [header] + [[rows[day].get(column, "") for column in header] for day in sorted(rows)]
