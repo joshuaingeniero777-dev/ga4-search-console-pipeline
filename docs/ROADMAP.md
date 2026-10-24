@@ -205,6 +205,8 @@ past their level (decision 26).
   America/New_York** (decisions 14, 15).
 - API on **Cloud Run**; control panel on **Vercel** (decision 18).
 - "Run now" in the cloud starts the Cloud Run Job.
+- The scheduler must run `python -m pipeline.runner --trigger scheduled --triggered-by scheduler`.
+  Without `--trigger scheduled`, a run counts as manual.
 - Secrets live in each host's secret settings, never in the repo.
 - **Billing:** Marisol approved it with a $5/month maximum (decision 9). The user approved the cap as
   proposed: a budget that warns at $3 and a small function that switches billing off at $5.
