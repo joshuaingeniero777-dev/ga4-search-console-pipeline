@@ -7,7 +7,7 @@ still updated, and the run's message says exactly which one failed and why.
 
 import logging
 from collections.abc import Callable
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from pipeline import alerts, extract, load, slack
 from pipeline.errors import explain_error
@@ -22,6 +22,24 @@ Fetch = Callable[[date, date, list[str]], dict[str, dict]]
 
 def _plural(count: int) -> str:
     return f"{count} day" if count == 1 else f"{count} days"
+
+
+def with_no_record_days(fresh: dict, start: date, metrics: list[str]) -> dict:
+    """Add a blank row for each day before the newest reported one that Google left out.
+
+    Those days have no record at all (e.g. GA4 wasn't recording). They get a row with
+    blank values, so the sheet shows every day, but nothing is invented: never 0
+    (decision 29). Days after the newest reported one are left out: not reported yet.
+    """
+    if not fresh:
+        return fresh
+    newest = max(date.fromisoformat(day) for day in fresh)
+    filled = dict(fresh)
+    day = start
+    while day < newest:
+        filled.setdefault(day.isoformat(), {name: "" for name in metrics})
+        day += timedelta(days=1)
+    return filled
 
 
 def _describe(label: str, fresh: dict, start: date, end: date) -> str:
@@ -39,7 +57,7 @@ def _describe(label: str, fresh: dict, start: date, end: date) -> str:
     no_record = (newest - start).days + 1 - len({d for d in reported if d >= start})
     not_yet = (end - newest).days
     if no_record:
-        note += f" {_plural(no_record).capitalize()} had no {label} record and stay blank."
+        note += f" {_plural(no_record).capitalize()} had no {label} record; their rows are left blank."
     if not_yet:
         note += f" Google hasn't reported the newest {_plural(not_yet)} yet; later runs fill them in."
     return note
@@ -67,7 +85,8 @@ def pull_and_load(
     ):
         try:
             fresh = fetch(start, end, metrics)
-            days = load.write_daily(store, tab, fresh, metrics, now)
+            load.write_daily(store, tab, with_no_record_days(fresh, start, metrics), metrics, now)
+            days = len(fresh)  # days with data; blank no-record rows aren't counted as updated
         except Exception as error:
             log.exception("%s step failed", label)
             problems.append(f"{label} wasn't updated. {explain_error(error, label)}")

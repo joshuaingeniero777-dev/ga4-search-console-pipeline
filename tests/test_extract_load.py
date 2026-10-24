@@ -224,7 +224,7 @@ def test_runner_records_a_partly_failed_run_as_failed(store):
 
 # --- explaining missing days --------------------------------------------------------
 
-def test_days_with_no_record_are_named_and_left_blank(store, spreadsheet):
+def test_days_with_no_record_get_blank_rows(store, spreadsheet):
     # GA4 has the 14th and the 17th, nothing for the 15th-16th (not recording), and the
     # 18th-20th aren't reported yet.
     result = pull_and_load(
@@ -234,11 +234,26 @@ def test_days_with_no_record_are_named_and_left_blank(store, spreadsheet):
     )
 
     assert result.message.startswith(
-        "GA4: 2 days updated. 2 days had no GA4 record and stay blank. "
+        "GA4: 2 days updated. 2 days had no GA4 record; their rows are left blank. "
         "Google hasn't reported the newest 3 days yet; later runs fill them in."
     )
-    days = [row[0] for row in spreadsheet.worksheets[load.GA4_TAB].rows[1:]]
-    assert days == ["2026-10-14", "2026-10-17"]  # nothing invented for the 15th and 16th
+    assert result.rows_written == 2  # only days with data count as updated
+    rows = [row[:2] for row in spreadsheet.worksheets[load.GA4_TAB].rows[1:]]
+    assert rows == [["2026-10-14", 3], ["2026-10-15", ""], ["2026-10-16", ""], ["2026-10-17", 4]]  # never 0
+
+
+def test_a_blank_row_never_wipes_numbers_already_in_the_sheet():
+    existing = [["date", "sessions", "updated_at"], ["2026-10-15", 9, "old"]]
+    table = load.merge(existing, {"2026-10-15": {"sessions": ""}}, ["sessions"], "T", STAMP)
+    assert table[1] == ["2026-10-15", 9, "old"]
+
+
+def test_blank_rows_only_fill_gaps_before_the_newest_reported_day():
+    from pipeline.pull import with_no_record_days
+    filled = with_no_record_days({"2026-10-16": {"clicks": 1}}, START, ["clicks"])
+    assert sorted(filled) == ["2026-10-14", "2026-10-15", "2026-10-16"]
+    assert filled["2026-10-14"] == {"clicks": ""}
+    assert with_no_record_days({}, START, ["clicks"]) == {}
 
 
 def test_nothing_at_all_from_a_source_is_said_plainly(store):
