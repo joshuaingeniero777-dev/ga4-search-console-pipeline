@@ -75,7 +75,8 @@ Work follows `docs/ROADMAP.md`, one item at a time, each on its own branch and P
 
    Code that *can* write to the real sheet (settings, runs, data) does not need the user's OK to merge, because tests never touch the real sheet.
 6. **Always stop and ask before actually doing it:** running anything against a real Google Sheet, sending a real email, or deploying anything. Read-only checks with a read-only permission are fine.
-7. **Also stop and ask** when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
+7. **"Show me first" means stop and wait.** When the user asks to see something before it happens (a message, a change, a command), show it, end your turn, and act only after they reply. This holds even if the same request also says what to do next. Never record that the user reviewed or approved something they didn't.
+8. **Also stop and ask** when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
 
 ## Commands
 
