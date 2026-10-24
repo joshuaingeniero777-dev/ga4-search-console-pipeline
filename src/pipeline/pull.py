@@ -24,6 +24,27 @@ def _plural(count: int) -> str:
     return f"{count} day" if count == 1 else f"{count} days"
 
 
+def _describe(label: str, fresh: dict, start: date, end: date) -> str:
+    """What was updated, and why any days are missing, in plain English.
+
+    Days after the newest one Google reported haven't been reported yet (later runs
+    fill them in). Days before it that are missing have no record at all, e.g. GA4
+    wasn't recording; they're left blank, never written as 0 (decision 29).
+    """
+    note = f"{label}: {_plural(len(fresh))} updated."
+    if not fresh:
+        return note + " Google had nothing for these days."
+    reported = {date.fromisoformat(day) for day in fresh}
+    newest = max(reported)
+    no_record = (newest - start).days + 1 - len({d for d in reported if d >= start})
+    not_yet = (end - newest).days
+    if no_record:
+        note += f" {_plural(no_record).capitalize()} had no {label} record and stay blank."
+    if not_yet:
+        note += f" Google hasn't reported the newest {_plural(not_yet)} yet; later runs fill them in."
+    return note
+
+
 def pull_and_load(
     start: date,
     end: date,
@@ -36,7 +57,6 @@ def pull_and_load(
     now: datetime | None = None,
 ) -> StepResult:
     now = now or datetime.now(UTC)
-    wanted_days = (end - start).days + 1
     written = 0
     notes: list[str] = []
     problems: list[str] = []
@@ -46,16 +66,14 @@ def pull_and_load(
         ("Search Console", load.SEARCH_CONSOLE_TAB, search_console, list(settings.metrics.search_console)),
     ):
         try:
-            days = load.write_daily(store, tab, fetch(start, end, metrics), metrics, now)
+            fresh = fetch(start, end, metrics)
+            days = load.write_daily(store, tab, fresh, metrics, now)
         except Exception as error:
             log.exception("%s step failed", label)
             problems.append(f"{label} wasn't updated. {explain_error(error, label)}")
             continue
         written += days
-        note = f"{label}: {_plural(days)} updated."
-        if days < wanted_days:
-            note += f" Google hadn't reported the other {_plural(wanted_days - days)} yet; later runs fill them in."
-        notes.append(note)
+        notes.append(_describe(label, fresh, start, end))
 
     # Alerts look at everything in the tabs, so they still run if one source failed today.
     try:
