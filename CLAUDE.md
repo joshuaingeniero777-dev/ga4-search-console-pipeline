@@ -51,7 +51,7 @@ The control panel is NOT a dashboard. Charts and reporting live in Looker Studio
 ## Rules for any agent working here
 
 1. **Never commit secrets.** `service-account.json`, `.env`, and anything with keys stay gitignored. Never print their contents.
-2. **Never work on `main`.** Create a branch first.
+2. **Never work on `main`.** Create each branch from an up-to-date `main`: `git switch main; git pull; git switch -c <branch>`. Never branch from another feature branch.
 3. **Small changes.** One feature per branch. If a task touches more than one of `src/`, `api/`, `web/`, say so before starting.
 4. **Run the tests before saying something is done.** If tests do not exist for what you changed, write them.
 5. **Do not add dependencies** without explaining why in the PR description.
@@ -66,15 +66,16 @@ Work follows `docs/ROADMAP.md`, one item at a time, each on its own branch and P
 
 1. **Every PR runs the `Tests` check** (`.github/workflows/tests.yml`: pytest on Python 3.14). Tests must pass with no `service-account.json`, no `.env` and no network access. Never add secrets to CI to make a test pass.
 2. **After opening a PR, wait for the check:** `gh pr checks <number> --watch`. If it fails, fix it on the same branch and push again.
-3. **When the check passes, the agent merges the PR itself:** `gh pr merge <number> --squash --delete-branch`, then `git switch main` and `git pull`. Then mark the item done in `docs/ROADMAP.md` and start the next one. Give the user a short plain-English summary of each merged PR.
-4. **Exception: stop and ask the user before merging** any PR that touches:
+3. **Before merging, check the PR holds only this item's work:** `gh pr view <number> --json commits,files`. If anything else is in it, stop and tell the user.
+4. **When the check passes, the agent merges the PR itself:** `gh pr merge <number> --squash --delete-branch`, then `git switch main` and `git pull`. Then mark the item done in `docs/ROADMAP.md` and start the next one. Give the user a short plain-English summary of each merged PR.
+5. **Exception: stop and ask the user before merging** any PR that touches:
    - deployment
    - secrets handling
    - alerts that send real email
 
    Code that *can* write to the real sheet (settings, runs, data) does not need the user's OK to merge, because tests never touch the real sheet.
-5. **Always stop and ask before actually doing it:** running anything against a real Google Sheet, sending a real email, or deploying anything. Read-only checks with a read-only permission are fine.
-6. **Also stop and ask** when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
+6. **Always stop and ask before actually doing it:** running anything against a real Google Sheet, sending a real email, or deploying anything. Read-only checks with a read-only permission are fine.
+7. **Also stop and ask** when something needs a person (accounts, Cloud Console clicks, OAuth setup, answers from Marisol); when a decision isn't covered here or in `docs/decisions.md`; or when a test fails and the cause isn't clear.
 
 ## Commands
 
