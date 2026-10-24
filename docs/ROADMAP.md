@@ -33,7 +33,7 @@ Code that *can* write to the real sheet merges without asking; tests never touch
 | 3 | Control panel pages | `feat/web-panel` | ✅ PR #9 |
 | 4 | Google sign-in for the panel | `feat/panel-sign-in` | ✅ PR #10, tested for real |
 | 5 | Real data: GA4 + Search Console into the sheet | `feat/extract-load` | ✅ PR #12, first real run done |
-| 6 | Alerts | `feat/alerts` | ⏳ built (PRs #13, #14), live settings updated; waiting on the Slack link |
+| 6 | Alerts | `feat/alerts` | ✅ built (PRs #13, #14); Slack connected and tested |
 | 7 | Deployment | `feat/deploy` | ⏸️ billing cap built (not deployed); Marisol to set up a billing account first |
 | 8 | Claude Code skills for the owner | `feat/owner-skills` | ✅ PR #16; owner to try them |
 | 9 | Owner's guide | `docs/owners-guide` | ✅ `docs/owners-guide.md`; contacts to fill at handover |
@@ -161,7 +161,7 @@ metrics chosen in settings, one row per day (CLAUDE.md), re-pulling a rolling
   both GA4 and Search Console.
 - **Will ask before:** the first real write of data to the master sheet.
 
-## 6. Alerts 🔄
+## 6. Alerts ✅
 
 Each morning, after the data is written, compare each count metric's latest 7 days with the
 7 days before (decisions 21–24), and post an alert to the pipeline's Slack channel about drops
@@ -192,9 +192,11 @@ past their level (decision 26).
 - [x] PR #14 merged by the user (2026-10-24).
 - [x] Live `_settings` tab updated to Marisol's values, with the user's OK (2026-10-24). No placeholder
   warnings left.
-- [ ] **Needs a person:** make the Slack link and put it in `.env` as `SLACK_WEBHOOK_URL` (steps in the
-  owner's guide).
-- [ ] One test message to the channel. The user sees the exact text first and OKs it.
+- [x] Slack link added to `.env` as `SLACK_WEBHOOK_URL` by the user (2026-10-24).
+- [x] One test message posted to the channel, with the user's OK after seeing the exact text; Slack
+  answered "ok" (2026-10-24).
+- Real alerts start once the pipeline runs every morning in the cloud (item 7), and once there are
+  14 days of data to compare.
 
 ## 7. Deployment ⏸️
 
